@@ -1,0 +1,4 @@
+aiokafka
+confluent-kafka
+opencv-python
+numpy

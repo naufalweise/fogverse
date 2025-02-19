@@ -1,0 +1,24 @@
+policies:
+  throughput:
+    class: fogverse.auto_scaling.policies.ThroughputPolicy
+    params:
+      threshold: 1000
+      max_replicas: 10
+
+  resource:
+    class: fogverse.auto_scaling.policies.ResourceUsagePolicy
+    params:
+      cpu_threshold: 80
+      memory_threshold: 70
+
+  spike_detection:
+    class: fogverse.auto_scaling.policies.SpikeDetectionPolicy
+    params:
+      spike_threshold: 1.5
+      max_replicas: 10
+
+components:
+  video-processor:
+    min_replicas: 2
+    max_replicas: 8
+    metrics_window: 300s

@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  workload-generator:
+    image: python:3.12.3
+    volumes:
+      - ../../:/app
+    working_dir: /app/examples/auto_scaling
+    environment:
+      - PYTHONPATH=/app
+    command: sh -c "pip install -r /app/requirements.txt && python workload_generator.py"
