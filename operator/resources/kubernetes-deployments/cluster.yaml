@@ -65,5 +65,5 @@ spec:
       default.replication.factor: 3
       min.insync.replicas: 2
   entityOperator:
-    #topicOperator: {}
+    topicOperator: {}
     userOperator: {}
