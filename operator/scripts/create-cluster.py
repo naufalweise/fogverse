@@ -5,13 +5,6 @@ import os
 
 BROMINMAX_FILE = "./libs/brominmax/getpb.py"
 
-result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
-print(result.stdout)
-
-subprocess.run("echo Hello, World!", shell=True)
-
-subprocess.run("kubectl get pods", shell=True)
-
 def get_config():
     try:
         with open("examples/operator-config.yaml", "r") as file:
