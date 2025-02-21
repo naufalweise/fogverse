@@ -36,3 +36,10 @@ List Strimzi Objects
 ```
 kubectl get strimzi -n kafka
 ```
+
+
+Delete cluster
+```
+kubectl -n kafka delete $(kubectl get strimzi -o name -n kafka)
+kubectl delete pvc -l strimzi.io/name=my-cluster-kafka -n kafka
+```
