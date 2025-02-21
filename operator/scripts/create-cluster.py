@@ -2,12 +2,18 @@ import subprocess
 from jinja2 import Template
 import yaml
 import os
+import argparse
 
 BROMINMAX_FILE = "./libs/brominmax/getpb.py"
 
+parser = argparse.ArgumentParser(description="Generate cluster kubernetes deployment files.")
+parser.add_argument("--config", required=True, help="Path to cluster-config.yaml file")
+
+args = parser.parse_args()
+
 def get_config():
     try:
-        with open("examples/operator-config.yaml", "r") as file:
+        with open(args.config, "r") as file:
             config = yaml.safe_load(file)
             return config
     except FileNotFoundError:

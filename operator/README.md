@@ -22,14 +22,15 @@ pip install -r requirements
 
 # Running
 
-Install 
+- Make cluster config. See in examples folder.
 
-Generate Deployment file
+
+- Generate Deployment file
 ```
-python scripts/create-cluster.py
+python scripts/create-cluster.py --config examples/cluster-config.yaml
 ```
 
-Deploy Cluster
+- Deploy Cluster
 
 ```
 kubectl apply -f out/deployments.yaml -n kafka
