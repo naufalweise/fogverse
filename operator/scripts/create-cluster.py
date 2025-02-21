@@ -63,4 +63,4 @@ with open(output_file, "w") as f:
     f.write(render_topic_yaml(topics, num_partitions))
 
 
-print(f"Generated {output_folder}/deployment.yaml")
+print(f"Generated {output_file}")

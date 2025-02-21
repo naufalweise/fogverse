@@ -1,4 +1,5 @@
 # Install
+
 - Install kubectl
 - Install minikube if you want to run the cluster on your machine
 - Start the kubernetes cluster
@@ -11,13 +12,27 @@ kubectl create namespace kafka
 kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
 ```
 Notes, use namespace kafka in kubernetes.
+- Install python dependencies, use virtual env
+```
+cd operator
+python -m venv .env-operator
+source .env-operator/bin/activate
+pip install -r requirements
+```
 
 # Running
+
+Install 
+
+Generate Deployment file
+```
+python scripts/create-cluster.py
+```
 
 Deploy Cluster
 
 ```
-kubectl apply -f operator/resources/kubernetes-deployments -n kafka
+kubectl apply -f out/deployments.yaml -n kafka
 ```
 
 # Useful commands
