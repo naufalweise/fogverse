@@ -38,6 +38,17 @@ kubectl apply -f out/deployments.yaml -n kafka
 
 # Useful commands
 
+Open minikube dashboard
+```
+minikube dashboard
+```
+
+Stop minikube
+
+```
+minikube stop
+```
+
 Open operator log
 ```
 kubectl logs deployment/strimzi-cluster-operator -n kafka -f
