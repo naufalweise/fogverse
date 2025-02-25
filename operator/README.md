@@ -1,3 +1,6 @@
+# Cluster Operator
+Cluster operator manages kafka cluster using kubernetes. It can create kafka cluster, including its brookers, and topic partitions according to bromin and bromax partitioning algorithms.
+
 # Install
 
 - Install kubectl
@@ -29,6 +32,8 @@ pip install -r requirements
 ```
 python scripts/create-cluster.py --config examples/cluster-config.yaml
 ```
+
+This will create kubernetes deployment files for the brokers and topics configuration according to bromin/bromax algorithms.
 
 - Deploy Cluster
 
