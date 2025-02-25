@@ -36,6 +36,21 @@ python scripts/create-cluster.py --config examples/cluster-config.yaml
 kubectl apply -f out/deployments.yaml -n kafka
 ```
 
+# Basic Usage
+
+## Run kafka producer
+
+```
+kubectl -n kafka run kafka-producer -ti --image=quay.io/strimzi/kafka:0.45.0-kafka-3.9.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic
+```
+
+## Run kafka consumer
+
+```
+kubectl -n kafka run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.45.0-kafka-3.9.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic --from-beginning
+```
+
+
 # Useful commands
 
 Open minikube dashboard
