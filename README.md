@@ -4,6 +4,9 @@ Description, Contribution, etc coming soon.
 ## Usage
 See [Live YOLOv5 Implementation](https://github.com/fogverse/live-yolov5).
 
+### Cluster Operator
+For managing kafka cluster, including creating & scaling kafka brokers. See `operator` folder.
+
 ### Auto Scaling Usage
 
 **NOTICE**
