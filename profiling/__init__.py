@@ -4,239 +4,188 @@ import logging
 import os
 import secrets
 import socket
-import time
 
-from utils import (calc_datetime, get_header, get_timestamp, size_kb,
-                           get_timestamp_str)
+from utils import (
+    calc_datetime, get_header, get_timestamp, size_kb, get_timestamp_str
+)
 from fogverse_logging import FogVerseLogging
-
-from aiokafka import ConsumerRecord, AIOKafkaProducer as _AIOKafkaProducer
+from aiokafka import ConsumerRecord, AIOKafkaProducer
 
 class AbstractProfiling:
-    def _before_start(self,*args,**kwargs) -> None:...
-    def _after_start(self,*args,**kwargs) -> None:...
-    def _before_receive(self,*args,**kwargs) -> None:...
-    def _after_receive(self,*args,**kwargs) -> None:...
-    def _before_decode(self,*args,**kwargs) -> None:...
-    def _after_decode(self,*args,**kwargs) -> None:...
-    def _before_process(self,*args,**kwargs) -> None:...
-    def _after_process(self,*args,**kwargs) -> None:...
-    def _before_encode(self,*args,**kwargs) -> None:...
-    def _after_encode(self,*args,**kwargs) -> None:...
-    def _before_send(self,*args,**kwargs) -> None:...
-    def _after_send(self,*args,**kwargs) -> None:...
-    def _before_close(self,*args,**kwargs) -> None:...
-    def _after_close(self,*args,**kwargs) -> None:...
-
-def _calc_delay(start, end=None, decimals=2):
-    end = end or time.time()
-    delay = (end - start) * 1E3
-    return round(delay, decimals)
+    """Defines hook methods for profiling lifecycle events."""
+    def _before_start(self, *args, **kwargs): ...
+    def _after_start(self, *args, **kwargs): ...
+    def _before_receive(self, *args, **kwargs): ...
+    def _after_receive(self, *args, **kwargs): ...
+    def _before_decode(self, *args, **kwargs): ...
+    def _after_decode(self, *args, **kwargs): ...
+    def _before_process(self, *args, **kwargs): ...
+    def _after_process(self, *args, **kwargs): ...
+    def _before_encode(self, *args, **kwargs): ...
+    def _after_encode(self, *args, **kwargs): ...
+    def _before_send(self, *args, **kwargs): ...
+    def _after_send(self, *args, **kwargs): ...
+    def _before_close(self, *args, **kwargs): ...
+    def _after_close(self, *args, **kwargs): ...
 
 class BaseProfiling(AbstractProfiling):
+    """Base class for profiling execution times and data sizes."""
+    
     def __init__(self, loop=None):
         self._loop = loop or asyncio.get_event_loop()
         self._log_data = {}
 
-    def finalize_data(self, data=None, default_none=None):
-        if data is None:
-            data = self._log_data
+    def finalize_data(self, data=None, default_value=None):
+        """Prepare final log data."""
+        data = data or self._log_data
+        return self._df_header, [data.get(header, default_value) for header in self._df_header]
 
-        res = []
-        headers = self._df_header
-        for header in headers:
-            _data = data.get(header, default_none)
-            res.append(_data)
-
-        return headers, res
 
 class Profiling(BaseProfiling):
-    def __init__(self,
-                 name=None,
-                 dirname=None,
-                 df_header=['topic from','topic to','frame','offset received',
-                            'frame delay (ms)','msg creation delay (ms)',
-                            'consume time (ms)','size data received (KB)',
-                            'decode time (ms)','size data decoded (KB)',
-                            'process time (ms)','size data processed (KB)',
-                            'encode time (ms)','size data encoded (KB)',
-                            'send time (ms)','size data sent (KB)','offset sent'],
-                 remote_logging=False,
-                 remote_logging_name=None,
-                 logger=None,
-                 app_id=None,
-                 loop=None):
-        super().__init__(loop=loop)
+    """Profiles execution times, data sizes, and logs statistics locally or remotely."""
+
+    DEFAULT_HEADERS = [
+        "topic from", "topic to", "frame", "offset received",
+        "frame delay (ms)", "msg creation delay (ms)",
+        "consume time (ms)", "size data received (KB)",
+        "decode time (ms)", "size data decoded (KB)",
+        "process time (ms)", "size data processed (KB)",
+        "encode time (ms)", "size data encoded (KB)",
+        "send time (ms)", "size data sent (KB)", "offset sent"
+    ]
+
+    def __init__(self, name=None, dirname=None, remote_logging=False,
+                 remote_logging_name=None, logger=None, app_id=None, loop=None):
+        super().__init__(loop)
         self._unique_id = secrets.token_hex(3)
         self.app_id = app_id or self._unique_id
-        self._profiling_name = name or \
-            f'{self.__class__.__name__}_{self._unique_id}'
-        self._remote_logging_name = remote_logging_name or self._profiling_name
+        self._profiling_name = name or f"{self.__class__.__name__}_{self._unique_id}"
+        self._df_header = self.DEFAULT_HEADERS
+        self._log = logger or FogVerseLogging(self._profiling_name, dirname, self._df_header, logging.FOGV_CSV)
+
+        # Set up remote logging if enabled.
         self._logging_producer = None
-        self._df_header = df_header
         if remote_logging:
-            # self._bg_tasks = set()
-            self._logging_topic = os.getenv('LOGGING_TOPIC') or \
-                getattr(self, 'logging_topic', None) or \
-                'fogverse-profiling'
-            assert self._logging_topic is not None, \
-                'Setting remote_log=True for Profiling means there should\n'\
-                'be topic for logger to produce. Please set LOGGING_TOPIC env,\n'\
-                'or self.logging_topic var.'
+            self._setup_remote_logging(remote_logging_name)
 
-            self._logging_producer_servers = \
-                os.getenv('LOGGING_PRODUCER_SERVERS') or \
-                getattr(self, 'logging_producer_servers', None) or \
-                os.getenv('PRODUCER_SERVERS') or \
-                getattr(self, 'producer_servers', None)
-            assert self._logging_producer_servers is not None, \
-                'Setting remote_log=True for Profiling means there should\n'\
-                'be kafka server address for logger to produce. Please set\n'\
-                'LOGGING_PRODUCER_SERVERS env, or self.logging_producer_servers var,\n'\
-                'or PRODUCER_SERVERS env, or self.producer_servers var.'
+    def _setup_remote_logging(self, remote_logging_name):
+        """Initialize remote logging configurations."""
+        self._remote_logging_name = remote_logging_name or self._profiling_name
+        self._logging_topic = os.getenv("LOGGING_TOPIC", "fogverse-profiling")
+        self._logging_producer_servers = os.getenv("LOGGING_PRODUCER_SERVERS") or os.getenv("PRODUCER_SERVERS")
 
-            self._logging_producer_conf = getattr(self, 'logging_producer_conf', {})
-            _logging_producer_conf = {
-                'loop': self._loop,
-                'bootstrap_servers': self._logging_producer_servers,
-                'client_id': os.getenv('CLIENT_ID', socket.gethostname()),
-                **self._logging_producer_conf}
-            self._logging_producer = _AIOKafkaProducer(**_logging_producer_conf)
+        if not self._logging_producer_servers:
+            raise ValueError("Remote logging requires a Kafka server. Set LOGGING_PRODUCER_SERVERS or PRODUCER_SERVERS.")
 
-        self._log = logger or FogVerseLogging(name=self._profiling_name,
-                                              dirname=dirname,
-                                              csv_header=self._df_header,
-                                              level=logging.FOGV_CSV)
+        self._logging_producer = AIOKafkaProducer(
+            loop=self._loop,
+            bootstrap_servers=self._logging_producer_servers,
+            client_id=os.getenv("CLIENT_ID", socket.gethostname())
+        )
 
     async def start_producer(self):
-        if hasattr(super(), 'start_producer'):
+        """Start Kafka producer for logging."""
+        if hasattr(super(), "start_producer"):
             await super().start_producer()
         if self._logging_producer:
             await self._logging_producer.start()
 
     async def stop_producer(self):
-        if hasattr(super(), 'stop_producer'):
+        """Stop Kafka producer for logging."""
+        if hasattr(super(), "stop_producer"):
             await super().stop_producer()
         if self._logging_producer:
-            await self._logging_producer.start()
+            await self._logging_producer.stop()
 
     def _before_receive(self):
+        """Prepare for receiving data."""
         self._log_data.clear()
         self._start = get_timestamp()
 
     def _after_receive(self, data):
-        delay_consume = calc_datetime(self._start)
-        self._log_data['consume time (ms)'] = delay_consume
-
-        if isinstance(data, dict) and data.get('data') != None:
-            _size = size_kb(data['data'])
-        else:
-            _size = size_kb(data)
-        self._log_data['size data received (KB)'] = _size
+        """Log data size and time taken for consumption."""
+        self._log_data["consume time (ms)"] = calc_datetime(self._start)
+        self._log_data["size data received (KB)"] = size_kb(data.get("data", data) if isinstance(data, dict) else data)
 
     def _before_decode(self, _):
         self._before_decode_time = get_timestamp()
 
     def _after_decode(self, data):
-        decoding_time = calc_datetime(self._before_decode_time)
-        self._log_data['decode time (ms)'] = decoding_time
+        """Log decoding time and message metadata."""
+        self._log_data["decode time (ms)"] = calc_datetime(self._before_decode_time)
+        self._log_data["size data decoded (KB)"] = size_kb(data)
 
         if isinstance(self.message, ConsumerRecord):
             now = get_timestamp()
-            frame_creation_time = get_header(self.message.headers,
-                                               'timestamp')
-            if frame_creation_time == None:
-                frame_delay = -1
-            else:
-                frame_delay = calc_datetime(frame_creation_time, end=now)
-            creation_delay = _calc_delay(self.message.timestamp/1e3)
-            offset_received = self.message.offset
-            topic_from = self.message.topic
+            self._log_data.update({
+                "frame delay (ms)": calc_datetime(get_header(self.message.headers, "timestamp"), now),
+                "msg creation delay (ms)": calc_datetime(self.message.timestamp / 1e3),
+                "offset received": self.message.offset,
+                "topic from": self.message.topic
+            })
         else:
-            frame_delay = -1
-            creation_delay = self._log_data['consume time (ms)']
-            offset_received = -1
-            topic_from = None
-
-        extras = getattr(self, '_message_extra', None)
-        if extras:
-            consume_time = extras.get('consume time (ms)')
-            if consume_time:
-                self._log_data['consume time (ms)'] = consume_time
-        self._log_data['frame delay (ms)'] = frame_delay
-        self._log_data['msg creation delay (ms)'] = creation_delay
-        self._log_data['offset received'] = offset_received
-        self._log_data['topic from'] = topic_from
-
-        self._log_data['size data decoded (KB)'] = size_kb(data)
+            self._log_data.update({
+                "frame delay (ms)": -1,
+                "msg creation delay (ms)": self._log_data["consume time (ms)"],
+                "offset received": -1,
+                "topic from": None
+            })
 
     def _before_process(self, _):
         self._before_process_time = get_timestamp()
 
     def _after_process(self, result):
-        delay_process = calc_datetime(self._before_process_time)
-        self._log_data['process time (ms)'] = delay_process
-        self._log_data['size data processed (KB)'] = size_kb(result)
+        self._log_data.update({
+            "process time (ms)": calc_datetime(self._before_process_time),
+            "size data processed (KB)": size_kb(result)
+        })
 
     def _before_encode(self, _):
         self._before_encode_time = get_timestamp()
 
     def _after_encode(self, data):
-        delay_encode = calc_datetime(self._before_encode_time)
-        self._log_data['encode time (ms)'] = delay_encode
-        self._log_data['size data encoded (KB)'] = size_kb(data)
+        self._log_data.update({
+            "encode time (ms)": calc_datetime(self._before_encode_time),
+            "size data encoded (KB)": size_kb(data)
+        })
 
     def _before_send(self, data):
-        self._log_data['size data sent (KB)'] = size_kb(data)
+        """Log data size before sending."""
+        self._log_data["size data sent (KB)"] = size_kb(data)
         self._datetime_before_send = get_timestamp()
 
-    def _get_extra_callback_args(self):
-        args, kwargs = [] , {
-            'log_data': self._log_data.copy(),
-            'headers': getattr(self,'_headers',None),
-            'topic': getattr(self,'_topic',None),
-            'timestamp': getattr(self, '_datetime_before_send', None),
-        }
-        self._log_data.clear()
-        return args, kwargs
+    async def _send_logging_data(self, headers, data):
+        """Send profiling logs asynchronously."""
+        if not self._logging_producer:
+            return
 
-    async def _send_logging_data(self, log_headers, log_data) -> asyncio.Future:
-        if self._logging_producer is None: return
-        send_data = {
-            'app_id': self.app_id,
-            'log headers': ['timestamp', *log_headers],
-            'log data': [get_timestamp_str(), *log_data],
-            'extras': getattr(self, 'extra_remote_data', {}),
-        }
-        _edit_remote_data = getattr(self, '_edit_remote_data', None)
-        if callable(_edit_remote_data):
-            self._edit_remote_data(send_data)
-        send_data = json.dumps(send_data, default=vars).encode()
-        await self._logging_producer.send(topic=self._logging_topic,
-                                                   value=send_data)
+        send_data = json.dumps({
+            "app_id": self.app_id,
+            "log headers": ["timestamp", *headers],
+            "log data": [get_timestamp_str(), *data],
+            "extras": getattr(self, "extra_remote_data", {})
+        }).encode()
 
-    async def callback(self, record_metadata, *args,
-                 log_data=None, headers=None, topic=None,
-                    timestamp=None, **kwargs):
-        frame = int(get_header(headers,'frame',default=-1))
-        offset = getattr(record_metadata, 'offset', -1)
-        log_data['offset sent'] = offset
-        log_data['frame'] = frame
-        log_data['topic to'] = topic
-        log_data['send time (ms)'] = calc_datetime(timestamp)
+        await self._logging_producer.send(topic=self._logging_topic, value=send_data)
 
-        log_headers, res_data = self.finalize_data(log_data)
-        await self._send_logging_data(log_headers, res_data)
+    async def callback(self, record_metadata, *args, log_data=None, headers=None, topic=None, timestamp=None, **kwargs):
+        """Callback after sending a message."""
+        log_data.update({
+            "offset sent": getattr(record_metadata, "offset", -1),
+            "frame": int(get_header(headers, "frame", -1)),
+            "topic to": topic,
+            "send time (ms)": calc_datetime(timestamp)
+        })
+
+        headers, res_data = self.finalize_data(log_data)
+        await self._send_logging_data(headers, res_data)
         self._log.csv_log(res_data)
 
     def _after_send(self, data):
-        if len(self._log_data) == 0: return
-        send_time = calc_datetime(self._datetime_before_send)
-        self._log_data['send time (ms)'] = send_time
-
-        size_sent = size_kb(data)
-        self._log_data['size data sent (KB)'] = size_sent
-
-        log_headers, res_data = self.finalize_data()
-        self._send_logging_data(log_headers, res_data)
+        """Finalize logging after sending data."""
+        if not self._log_data:
+            return
+        self._log_data["send time (ms)"] = calc_datetime(self._datetime_before_send)
+        headers, res_data = self.finalize_data()
+        self._send_logging_data(headers, res_data)
         self._log.csv_log(res_data)

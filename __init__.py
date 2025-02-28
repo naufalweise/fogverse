@@ -2,7 +2,7 @@ import asyncio
 
 from .base import AbstractConsumer, AbstractProducer
 from .consumer_producer import AIOKafkaConsumer, AIOKafkaProducer
-from .general import Runnable
+from .runnable import Runnable
 from utils.time import calc_datetime, get_timestamp
 
 class Producer(AbstractConsumer, AIOKafkaProducer, Runnable):
@@ -40,7 +40,7 @@ class ConsumerStorage(AbstractConsumer, AbstractProducer, Runnable):
         """Send data to the queue, replacing the last message if `keep_messages` is False."""
 
         if not self.keep_messages and not self.queue.empty():
-            self.queue.get_nowait()
+            self.queue.get_nowait() # Discard oldest message if queue isn't empty.
 
         obj = {
             "message": self.message,
