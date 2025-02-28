@@ -1,13 +1,12 @@
 import asyncio
 import json
-import logging
 import os
 import socket
 import sys
 import traceback
 import uuid
 
-from ..fogverse_logging import FogVerseLogging
+from ..fogverse_logging import FOGV_FILE, FogVerseLogging
 from ..utils.admin import setup_topics, read_topic_yaml
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from confluent_kafka.admin import AdminClient
@@ -52,7 +51,7 @@ class Manager:
         self.components = components
 
         # Handles structured logging and tracks Manager activity.
-        self.logger = FogVerseLogging(self.manager_id, level=logging.INFO, dirname=log_dir)
+        self.logger = FogVerseLogging(self.manager_id, level=FOGV_FILE, dirname=log_dir)
 
         # Determines which Kafka servers to connect to.
         self.manager_kafka_servers = (os.getenv("KAFKA_SERVERS") or kafka_servers)

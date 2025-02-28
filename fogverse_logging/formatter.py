@@ -1,21 +1,17 @@
 from logging import Formatter
 
-class CsvFormatter(Formatter):
-    def __init__(self, fmt=None, datefmt=None, delimiter=','):
-        super().__init__(fmt, datefmt)
-        self._delimiter = delimiter
+class DelimitedFormatter(Formatter):
+    """Custom CSV formatter for logging, ensuring messages are formatted as CSV-friendly strings."""
 
-    def format_msg(self, msg):
-        ''' format the msg to csv string from list if list '''
-        if isinstance(msg, str): return msg
-        try:
-            msg = self._delimiter.join(map(str, msg))
-        except TypeError:
-            pass
-        return msg
+    def __init__(self, fmt=None, datefmt=None, delimiter=","):
+        super().__init__(fmt, datefmt)
+        self.delimiter = delimiter
+
+    def delimit_message(self, msg):
+        """Convert list-like messages to a CSV string while leaving strings unchanged."""
+        return self.delimiter.join(map(str, msg)) if isinstance(msg, (list, tuple)) else str(msg)
 
     def format(self, record):
-        ''' run format_msg on record to get string
-        before passing to Formatter '''
-        record.msg = self.format_msg(record.msg)
+        """Ensure the log message is properly formatted before passing to the base Formatter."""
+        record.msg = self.delimit_message(record.msg)
         return super().format(record)
