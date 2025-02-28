@@ -5,7 +5,7 @@ import uuid
 import cv2
 from aiokafka import AIOKafkaConsumer as _AIOKafkaConsumer, AIOKafkaProducer as _AIOKafkaProducer
 from utils.data import get_config
-from .fogverse_logging import FogVerseLogging
+from .logging import FogVerseLogging
 from .base import AbstractConsumer, AbstractProducer
 
 

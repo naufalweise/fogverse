@@ -8,7 +8,6 @@ import socket
 from utils import (
     calc_datetime, get_header, get_timestamp, size_kb, get_timestamp_str
 )
-from fogverse_logging import FogVerseLogging
 from aiokafka import ConsumerRecord, AIOKafkaProducer
 
 class AbstractProfiling:

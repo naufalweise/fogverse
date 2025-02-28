@@ -6,7 +6,7 @@ import sys
 import traceback
 import uuid
 
-from ..fogverse_logging import FOGV_FILE, FogVerseLogging
+from ..logging import FOGV_FILE, FogVerseLogging
 from ..utils.admin import setup_topics, read_topic_yaml
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from confluent_kafka.admin import AdminClient
