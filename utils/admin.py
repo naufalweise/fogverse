@@ -1,10 +1,12 @@
 import os
 import yaml
 
-from confluent_kafka import admin, KafkaError
+from confluent_kafka.admin import AdminClient, NewTopic, ConfigResource, NewPartitions
+from confluent_kafka.error import KafkaError
+from constants import DEFAULT_NUM_PARTITIONS
 from pathlib import Path
 
-def check_server_env(server):
+def resolve_server_env(server):
     """Resolve environment variables in server configurations."""
 
     resolved_server = server.copy()
@@ -19,121 +21,110 @@ def check_server_env(server):
 
     return resolved_server
 
-def create_topics(client: admin.AdminClient, topics, alter_if_exist=True):
-    """Create Kafka topics, with optional alterations if they already exist."""
-
+def setup_topics(admin, topics, alter_if_exist=True):
+    """Create or modify Kafka topics as needed."""
+    
     if not topics:
-        return  # Exit early if no topics are provided.
+        return  # No topics to process.
 
-    topic_instances = []
+    topic_instances = [
+        topic if isinstance(topic, NewTopic) else NewTopic(*topic) 
+        for topic in topics
+    ]
 
-    # Convert topic definitions into NewTopic instances if needed.
-    for topic in topics:
-        if isinstance(topic, admin.NewTopic):
-            topic_instances.append(topic)
+    responses = admin.create_topics(topic_instances)
+
+    for topic in topic_instances:
+        topic_name = topic.topic
+        exc = responses[topic_name].exception(4)  # Wait up to 4 secs for a response.
+
+        if exc and exc.args[0].code() == KafkaError.TOPIC_ALREADY_EXISTS:
+            if alter_if_exist:
+                print(f"Topic {topic_name} exists, updating...")
+                increase_partitions(topic_name, admin, topic.num_partitions)
+                alter_config(topic_name, admin, topic.config)
+                status = "altered"
+            else:
+                print(f"Topic {topic_name} exists, skipping...")
+                continue
         else:
-            topic_name, num_partitions, config = topic
-            topic_instances.append(admin.NewTopic(topic_name, num_partitions, config))
+            status = "created"
 
-    # Request Kafka to create topics.
-    res = client.create_topics(topic_instances)
+        print(f"Topic {topic_name} {status}.")
 
-    for topic_instance in topic_instances:
-        topic_name = topic_instance.topic
-        exc = res[topic_name].exception(5)  # Wait up to 5 seconds for response.
+def increase_partitions(topic_name, admin, num_partitions):
+    """
+    Increase the number of partitions for a Kafka topic if requested_partitions is higher than the current count.
 
-        if not alter_if_exist:
-            print(f'Topic {topic_name} already exists, skipping...')
-            continue
+    If the requested number is lower than or equal to the current partitions, no change is made.
+    """
 
-        if exc is not None:
-            err = exc.args[0]
-            if err.code() == KafkaError.TOPIC_ALREADY_EXISTS:
-                print(f'Topic {topic_name} already exists, altering configs...')
-                create_partitions(topic_name, client, topic_instance.num_partitions)
-                alter_config(topic_name, client, topic_instance.config)
-                status = 'altered'
-        else:
-            status = 'created'
+    new_parts = NewPartitions(topic_name, num_partitions)
+    responses = admin.create_partitions([new_parts])
 
-        print(f'Topic {topic_name} has been {status}.')
+    for future in responses.values():
+        exc = future.exception(4)  # Wait up to 4 secs for response.
+        if exc:
+            error_code = exc.args[0].code() if exc.args else None
+            if error_code == KafkaError.INVALID_PARTITIONS:
+                print(f"Invalid partition update for topic {topic_name}. Skipping.")
+                continue
+            raise exc
 
-def alter_config(topic_name, adm, config):
-    """Modify the configuration of an existing Kafka topic."""
+def alter_config(topic_name, admin, config):
+    """Update the configuration of an existing Kafka topic."""
 
     if not config:
-        return  # Exit if there is no configuration to update.
+        return # No config changes for topic.
 
-    res = adm.alter_configs([
-        admin.ConfigResource(admin.ConfigResource.Type.TOPIC, topic_name, set_config=config)
+    res = admin.alter_configs([
+        ConfigResource(ConfigResource.Type.TOPIC, topic_name, set_config=config)
     ])
 
-    # Check for exceptions in the alteration process.
     for future in res.values():
-        exc = future.exception(5)  # Wait up to 5 seconds for response.
-        if exc is not None:
+        if (exc := future.exception(4)):  # Wait up to 4 secs for response.
             raise exc
 
-def create_partitions(topic_name, adm, num_partitions):
-    """Increase the number of partitions in a Kafka topic if needed."""
+def read_topic_yaml(filepath, env_var_resolver={}, create=False):
+    """
+    Read a YAML configuration file for Kafka topics and clusters, process topic settings,
 
-    new_partitions = admin.NewPartitions(topic_name, num_partitions)
-    res = adm.create_partitions([new_partitions])
-
-    # Check for exceptions and handle errors.
-    for future in res.values():
-        exc = future.exception(5)  # Wait up to 5 seconds for response.
-        if exc is not None:
-            err = exc.args[0]
-            if err.code() == KafkaError.INVALID_PARTITIONS:
-                continue  # Ignore invalid partition errors.
-            raise exc
-
-def read_topic_yaml(filepath, str_format={}, create=False):
-    """Read a YAML file, process topic configurations, and optionally create Kafka topics."""
+    and optionally create the topics.
+    """
 
     filepath = Path(filepath) if isinstance(filepath, str) else filepath
 
     with filepath.open() as f:
-        config = yaml.safe_load(f)  # Load the YAML configuration.
+        config = yaml.safe_load(f)
 
-    topic_config = config['topic']
-    server_config = check_server_env(config['server'])  # Resolve environment variables.
+    topic_config = config.get('topic', {})
+    cluster_config = resolve_server_env(config.get('server', {}))
 
-    final_data = {}  # Store topic configurations grouped by server.
-    admins = {}
+    # Initialize an AdminClient for each Kafka cluster.
+    admins = {cluster: AdminClient({'bootstrap.servers': host})
+              for cluster, host in cluster_config.items()}
 
-    # Initialize Kafka admin clients for each server.
-    for server_name, host in server_config.items():
-        admins[server_name] = admin.AdminClient({'bootstrap.servers': host})
+    cluster_topics = {}
+    # Process each topic and assign it to the appropriate Kafka clusters.
+    for topic_name, attrs in topic_config.items():
+        num_partitions = attrs.get('partitions', DEFAULT_NUM_PARTITIONS)
+        topic_settings = attrs.get('config', {})
+        target_clusters = attrs['server']
+        formatted_topic = attrs.get('pattern', topic_name).format(**env_var_resolver)
 
-    # Process topic configurations.
-    for topic_name, attr in topic_config.items():
-        num_partitions = attr.get('partitions', 1)
-        topic_settings = attr.get('config', {})
-        assigned_servers = attr['server']
+        # Ensure target_clusters is always a list.
+        if not isinstance(target_clusters, list):
+            target_clusters = [target_clusters]
 
-        # Apply string formatting if a pattern is provided.
-        formatted_topic_name = attr.get('pattern', topic_name).format(**str_format)
-
-        # Ensure assigned_servers is a list.
-        assigned_servers = [assigned_servers] if not isinstance(assigned_servers, list) else assigned_servers
-
-        # Assign topics to respective servers.
-        for server_name in assigned_servers:
-            adm = admins[server_name]
-            host = server_config[server_name]
-            
-            final_data.setdefault(host, {'admin': adm, 'topics': []})
-            final_data[host]['topics'].append((formatted_topic_name, num_partitions, topic_settings))
+        # Group topics by cluster.
+        for cluster in target_clusters:
+            if cluster not in cluster_topics:
+                cluster_topics[cluster] = {'admin': admins[cluster], 'topics': []}
+            cluster_topics[cluster]['topics'].append((formatted_topic, num_partitions, topic_settings))
 
     if not create:
-        return final_data  # Return processed data if not creating topics.
+        return cluster_topics
 
-    # Create topics on each Kafka server.
-    for topic_data in final_data.values():
-        _admin = topic_data['admin']
-        topics = topic_data['topics']
-        create_topics(_admin, topics)
-
-    print('Done.')
+    # Create topics on each Kafka cluster.
+    for cluster_data in cluster_topics.values():
+        setup_topics(cluster_data['admin'], cluster_data['topics'])

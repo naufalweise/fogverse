@@ -7,7 +7,7 @@ import sys
 import traceback
 import uuid
 
-from ..utils.admin import create_topics, read_topic_yaml
+from ..utils.admin import setup_topics, read_topic_yaml
 from ..fogverse_logging import FogVerseLogging
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from confluent_kafka.admin import AdminClient
@@ -21,8 +21,6 @@ _default_topic_config = {
     "segment.ms": 8192,  # Time for segment rotation.
 }
 
-DEFAULT_PARTITION_NUM = 1
-
 class Manager:
     """Handles communication with Kafka and manages components in a distributed system."""
 
@@ -35,7 +33,7 @@ class Manager:
         kafka_servers="localhost",
         topic_name="fogverse-commands",
         topic_config=_default_topic_config,
-        partition_num=DEFAULT_PARTITION_NUM,
+        partition_num=DEFAULT_NUM_PARTITIONS,
         log_dir="logs",
     ):
 
@@ -55,7 +53,7 @@ class Manager:
         self.components = components
 
         # Handles structured logging and tracks Manager activity.
-        self.logger = FogVerseLogging(self.manager_id, level=logging.FOGV_FILE, dirname=log_dir)
+        self.logger = FogVerseLogging(self.manager_id, level=logging.INFO, dirname=log_dir)
 
         # Determines which Kafka servers to connect to.
         self.manager_kafka_servers = (os.getenv("KAFKA_SERVERS") or kafka_servers)
@@ -78,7 +76,7 @@ class Manager:
         self.logger.std_log("INITIATING MANAGER: %s", self.kafka_config)
 
         self.producer = AIOKafkaProducer(**self.kafka_config)
-        self.consumer = AIOKafkaConsumer(self.topic, **self.kafka_config)
+        self.consumer = AIOKafkaConsumer(self.topic_name, **self.kafka_config)
 
         # Stores metadata for components that need to be deployed but haven"t started yet.
         self.to_deploy = to_deploy
@@ -97,7 +95,7 @@ class Manager:
         topic_data = {}
 
         if yaml_path.is_file():
-            topic_data = read_topic_yaml(yaml_path, str_format=self.topic_str_format)
+            topic_data = read_topic_yaml(yaml_path, env_var_resolver={})
 
         # Ensure the manager"s topic is included.
         topic_data.setdefault(self.manager_kafka_servers, {"admin": self.admin, "topics": []})
@@ -107,7 +105,7 @@ class Manager:
 
         # Create or update topics.
         for data in topic_data.values():
-            create_topics(data["admin"], data["topics"])
+            setup_topics(data["admin"], data["topics"])
 
     async def start(self):
         """Start Kafka producer and consumer."""
