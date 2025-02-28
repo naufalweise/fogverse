@@ -1,56 +1,60 @@
 import asyncio
 
-from fogverse.util import calc_datetime, get_timestamp
-
-from .consumer_producer import (
-    AIOKafkaConsumer, AIOKafkaProducer, OpenCVConsumer
-)
 from .base import AbstractConsumer, AbstractProducer
+from .consumer_producer import AIOKafkaConsumer, AIOKafkaProducer
 from .general import Runnable
-from .profiling import Profiling
-from .manager import Manager
+from utils.time import calc_datetime, get_timestamp
 
 class Producer(AbstractConsumer, AIOKafkaProducer, Runnable):
+    """Kafka-based message producer."""
     pass
 
 class Consumer(AIOKafkaConsumer, AbstractProducer, Runnable):
+    """Kafka-based message consumer."""
     pass
 
 class ConsumerStorage(AbstractConsumer, AbstractProducer, Runnable):
+    """A consumer that stores messages in an async queue with optional message retention."""
+
     def __init__(self, keep_messages=False):
         self.keep_messages = keep_messages
-        self.q = asyncio.Queue()
+        self.queue = asyncio.Queue()
+        self._consume_time = None
 
     def _before_receive(self):
+        """Record the timestamp before receiving a message."""
+
         self._start = get_timestamp()
 
     def _after_receive(self, _):
+        """Calculate and store the time taken to consume the message."""
+
         self._consume_time = calc_datetime(self._start)
 
     def _get_send_extra(self, *args, **kwargs):
-        return {'consume time': getattr(self, '_consume_time', None)}
+        """Attach consumption metadata to the message."""
+
+        return {"consume_time": self._consume_time}
 
     async def send(self, data):
-        extras = None
-        extra_func = getattr(self, '_get_send_extra', None)
-        if callable(extra_func):
-            extras = self._get_send_extra(data)
+        """Send data to the queue, replacing the last message if `keep_messages` is False."""
+
+        if not self.keep_messages and not self.queue.empty():
+            self.queue.get_nowait()
+
         obj = {
-            'message': self.message,
-            'data': data,
-            'extra': extras
+            "message": self.message,
+            "data": data,
+            "extra": self._get_send_extra(data),
         }
-        if not self.keep_messages:
-            # remove the last message before putting the new one
-            if not self.q.empty():
-                self.get_nowait()
-        await self.q.put(obj)
+        await self.queue.put(obj)
 
     async def get(self):
-        return await self.q.get()
+        """Retrieve a message asynchronously."""
+
+        return await self.queue.get()
 
     def get_nowait(self):
-        try:
-            return self.q.get_nowait()
-        except asyncio.QueueEmpty:
-            return None
+        """Retrieve a message without waiting, or return None if empty."""
+
+        return self.queue.get_nowait() if not self.queue.empty() else None

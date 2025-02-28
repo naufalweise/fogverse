@@ -6,9 +6,9 @@ import secrets
 import socket
 import time
 
-from fogverse.util import (calc_datetime, get_header, get_timestamp, size_kb,
+from utils import (calc_datetime, get_header, get_timestamp, size_kb,
                            get_timestamp_str)
-from fogverse.fogverse_logging import FogVerseLogging
+from fogverse_logging import FogVerseLogging
 
 from aiokafka import ConsumerRecord, AIOKafkaProducer as _AIOKafkaProducer
 
