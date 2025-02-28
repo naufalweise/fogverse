@@ -7,8 +7,8 @@ import sys
 import traceback
 import uuid
 
-from ..utils.admin import setup_topics, read_topic_yaml
 from ..fogverse_logging import FogVerseLogging
+from ..utils.admin import setup_topics, read_topic_yaml
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from confluent_kafka.admin import AdminClient
 from constants import *
@@ -36,7 +36,6 @@ class Manager:
         partition_num=DEFAULT_NUM_PARTITIONS,
         log_dir="logs",
     ):
-
         # Ensures uniqueness across different instances of the application.
         self.app_id = app_id
 
@@ -88,20 +87,19 @@ class Manager:
         if not self.to_deploy:
             self.run_event.set()
 
-    async def check_topics(self):
-        """Ensure required Kafka topics exist."""
+    async def ensure_topics_exist(self):
+        """
+        Ensure Kafka topics exist by reading a yaml file, including the manager's topic,
 
-        yaml_path = Path("topic.yaml")  # Path to topic configuration file.
-        topic_data = {}
+        and creating/updating topics.
+        """
 
-        if yaml_path.is_file():
-            topic_data = read_topic_yaml(yaml_path, env_var_resolver={})
+        yaml_path = Path("topic.yaml")
+        topic_data = read_topic_yaml(yaml_path, env_var_resolver={}) if yaml_path.is_file() else {}
 
-        # Ensure the manager"s topic is included.
-        topic_data.setdefault(self.manager_kafka_servers, {"admin": self.admin, "topics": []})
-        topic_data[self.manager_kafka_servers]["topics"].append(
-            (self.topic, self.partition_num, self.topic_config)
-        )
+        # Ensure the manager's topic is included.
+        topics = topic_data.setdefault(self.manager_kafka_servers, {"admin": self.admin, "topics": []})["topics"]
+        topics.append((self.topic_name, self.partition_num, self.topic_config))
 
         # Create or update topics.
         for data in topic_data.values():
@@ -123,59 +121,47 @@ class Manager:
         """Send a message to Kafka with a specific command."""
 
         msg = json.dumps({"command": command, "from": self.manager_id, "message": message}).encode()
-        return await self.producer.send(self.topic, msg, **kwargs)
+        return await self.producer.send(self.topic_name, msg, **kwargs)
 
-    async def send_running_message(self):
-        """Send a running status message."""
+    async def notify_running_status(self):
+        """Notify that the application is running."""
 
         return await self.send_message(FOGV_STATUS_RUNNING, {"app_id": self.app_id})
 
-    async def send_request_component(self):
-        """Request deployment for components that haven"t started yet."""
+    async def deploy_pending_components(self):
+        """Deploy components that haven't started by sending deployment requests."""
+        if self.run_event.is_set():
+            return
 
-        # Keep looping until the run_event is set, indicating readiness to proceed.
-        while not self.run_event.is_set():
-            self.logger.std_log("Sending request component")
-            self.logger.std_log("to_deploy: %s", self.to_deploy)
+        while True:
+            self.logger.std_log("Deploying pending components: %s", self.to_deploy)
+            pending = False
 
-            pending_comp = False  # Flag to check if any components are still pending.
-
-            # Iterate over components that need to be deployed.
-            for comp_type, comp_data in self.to_deploy.items():
-                # Skip components that are not marked as needing to wait before starting.
-                if not comp_data.get("wait_to_start", False):
+            for comp in self.to_deploy.values():
+                if not comp.get("wait_to_start") or comp.get("status") == FOGV_STATUS_RUNNING:
                     continue
 
-                # Skip components that are already running.
-                if comp_data.get("status") == FOGV_STATUS_RUNNING:
-                    continue
+                if comp.get("status") is None:
+                    pending = True # Mark that at least one component is still pending.
 
-                # If status is None, it means the component hasn"t been deployed yet.
-                if comp_data.get("status") is None:
-                    pending_comp = True  # Mark that at least one component is still pending.
-
-                # Construct the deployment request message.
                 msg = {
-                    "image": comp_data["image"],  # Docker image or executable reference.
-                    "app_id": comp_data["app_id"],  # Unique identifier for the application.
-                    "env": comp_data["env"],  # Environment variables for the component.
+                    "image": comp["image"],
+                    "app_id": comp["app_id"],
+                    "env": comp["env"],
                 }
+                asyncio.create_task(self.send_message(FOGV_CMD_REQUEST_DEPLOY, msg))
 
-                # Send the deployment request asynchronously.
-                asyncio.ensure_future(self.send_message(FOGV_CMD_REQUEST_DEPLOY, msg))
+            if not pending:
+                break
 
-            # If there are no pending components, break the loop.
-            if not pending_comp:
-                break  # Exit loop if all components have started.
+            # Wait for 8 secs before retrying to prevent excessive requests.
+            await asyncio.sleep(8)
 
-            # Wait for 10 seconds before retrying to prevent excessive requests.
-            await asyncio.sleep(10)
-
-        self.logger.std_log("Leaving component request sending procedure")
-        self.run_event.set()  # Set run_event to indicate readiness.
+        self.logger.std_log("Deployment requests complete.")
+        self.run_event.set()
 
     async def send_shutdown(self):
-        """Send a shutdown status message."""
+        """Notify that the application is shutting down."""
 
         self.logger.std_log("Sending shutdown status")
         return await self.send_message(FOGV_STATUS_SHUTDOWN, {"app_id": self.app_id})
@@ -203,8 +189,11 @@ class Manager:
 
         try:
             async for msg in self.consumer:  # Asynchronously iterate over received messages.
-                data = json.loads(msg.value.decode())  # Decode the message content.
+                if msg.value is None:
+                    self.logger.std_log("Received empty message, skipping.")
+                    continue
 
+                data = json.loads(msg.value.decode())  # Decode the message content.
                 command, message = data["command"], data["message"]  # Extract command and message.
 
                 # Ignore messages sent by this Manager instance itself to prevent loops.
@@ -226,7 +215,7 @@ class Manager:
                 await self.handle_message(command, message)
 
         except Exception as e:
-            self.logger.std_log("Exception in receive_message")
+            self.logger.std_log("Exception in receiving messages.")
             self.logger.std_log(traceback.format_exc())  # Log full error traceback.
             raise e  # Re-raise the exception to propagate the error.
 
@@ -235,22 +224,24 @@ class Manager:
 
         # Wait until the run_event is set, ensuring all dependencies are ready.
         if not self.run_event.is_set():
-            self.logger.std_log("Waiting for dependencies to run")
+            self.logger.std_log("Waiting for dependencies to run.")
             await self.run_event.wait()  # Suspend execution until event is set.
+
+        tasks = []
 
         try:
             # Determine which components to run (use provided list or default to self.components).
             tasks = [asyncio.ensure_future(c.run()) for c in (components or self.components)]
 
             # Notify that the manager and its components are running.
-            await self.send_running_message()
+            await self.notify_running_status()
 
             # Run all components concurrently and wait until they complete.
             await asyncio.gather(*tasks)
 
         except Exception as e:
-            self.logger.std_log("Exception in run_components")
-            self.logger.std_log(traceback.format_exc())  # Log detailed traceback.
+            self.logger.std_log("Exception in running components.")
+            self.logger.std_log(traceback.format_exc()) # Log detailed traceback.
 
             # Cancel all running component tasks to ensure a clean shutdown.
             for t in tasks:
@@ -262,26 +253,26 @@ class Manager:
         """Main execution method for the Manager, orchestrating the workflow."""
 
         # Ensure required Kafka topics exist before starting.
-        await self.check_topics()
-
+        await self.ensure_topics_exist()
         # Start the Kafka consumer and producer.
         await self.start()
+
+        tasks = []
 
         try:
             # Start message receiving and component execution in parallel.
             tasks = [asyncio.ensure_future(self.receive_message()), 
                      asyncio.ensure_future(self.run_components())]
 
-            self.logger.std_log("Manager %s is running", self.manager_id)
+            self.logger.std_log("Manager %s is running.", self.manager_id)
 
             # Attempt to request deployment for required components.
-            await self.send_request_component()
-
+            await self.deploy_pending_components()
             # Wait for all tasks to complete.
             await asyncio.gather(*tasks)
 
         except Exception as e:
-            self.logger.std_log("Exception in run")
+            self.logger.std_log("Exception found while running Manager %s.", self.manager_id)
             self.logger.std_log(traceback.format_exc())  # Log detailed error traceback.
 
             # Cancel all tasks on error to prevent dangling processes.
@@ -293,4 +284,4 @@ class Manager:
         finally:
             # Ensure Kafka services are properly stopped.
             await self.stop()
-            self.logger.std_log("Manager has stopped")
+            self.logger.std_log("Manager has stopped.")

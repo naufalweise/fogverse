@@ -27,6 +27,7 @@ def setup_topics(admin, topics, alter_if_exist=True):
     if not topics:
         return  # No topics to process.
 
+    # Ensure all topics are instances of NewTopic; convert lists/tuples to NewTopic if needed.
     topic_instances = [
         topic if isinstance(topic, NewTopic) else NewTopic(*topic) 
         for topic in topics
@@ -122,9 +123,9 @@ def read_topic_yaml(filepath, env_var_resolver={}, create=False):
                 cluster_topics[cluster] = {'admin': admins[cluster], 'topics': []}
             cluster_topics[cluster]['topics'].append((formatted_topic, num_partitions, topic_settings))
 
-    if not create:
-        return cluster_topics
+    if create:
+        # Create topics on each Kafka cluster.
+        for cluster_data in cluster_topics.values():
+            setup_topics(cluster_data['admin'], cluster_data['topics'])
 
-    # Create topics on each Kafka cluster.
-    for cluster_data in cluster_topics.values():
-        setup_topics(cluster_data['admin'], cluster_data['topics'])
+    return cluster_topics
