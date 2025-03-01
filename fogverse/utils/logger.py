@@ -1,10 +1,11 @@
 import logging
 
-from ..logger.formatter import DelimitedFormatter
-from ..logger.handler import LogFileRotator
+from ..constants import DEFAULT_FMT
+from logger.formatter import DelimitedFormatter
+from logger.handler import LogFileRotator
 from pathlib import Path
 
-def get_logger(name=None, level=logging.DEBUG, handlers=None, formatter=None):
+def get_base_logger(name=None, level=logging.DEBUG, handlers=None, formatter=None):
     """Create and return a logger with the specified configuration that logs messages to the console."""
 
     logger = logging.getLogger(name)

@@ -1,7 +1,6 @@
-from .base import AbstractProducer
-from aiokafka import AIOKafkaConsumer
-from fogverse.runnable import Runnable
+from base import BaseConsumer
+from kafka import KafkaConsumer
+from open_cv import OpenCV
+from storage import ConsumerStorage
 
-class Consumer(AIOKafkaConsumer, AbstractProducer, Runnable):
-    """Kafka-based message consumer."""
-    pass
+__all__ = ["BaseConsumer", "KafkaConsumer", "OpenCV", "ConsumerStorage"]

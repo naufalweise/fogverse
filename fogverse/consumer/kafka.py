@@ -1,10 +1,10 @@
+import aiokafka
 import asyncio
 import socket
 import uuid
 
-from ..logger import FogLogger
-from .base import BaseConsumer
-from aiokafka import AIOKafkaConsumer
+from logger import FogLogger
+from consumer import BaseConsumer
 from fogverse.runnable import Runnable
 from utils.data import get_config
 
@@ -34,7 +34,7 @@ class KafkaConsumer(BaseConsumer, Runnable):
         }
 
         # Initialize the Kafka consumer.
-        self.consumer = AIOKafkaConsumer(
+        self.consumer = aiokafka.AIOKafkaConsumer(
             *self._consumer_topic,
             **self.consumer_conf
         )
