@@ -4,7 +4,7 @@ import numpy as np
 from utils.data import numpy_to_bytes
 from utils.image import compress_encoding
 
-class AbstractProducer:
+class BaseProducer:
     """Base producer class with message encoding logic."""
 
     async def start_producer(self):

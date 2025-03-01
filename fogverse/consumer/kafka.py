@@ -2,18 +2,19 @@ import asyncio
 import socket
 import uuid
 
-from ..logger import FogVerseLogging
-from .base import AbstractConsumer
-from aiokafka import AIOKafkaConsumer as _AIOKafkaConsumer
+from ..logger import FogLogger
+from .base import BaseConsumer
+from aiokafka import AIOKafkaConsumer
+from fogverse.runnable import Runnable
 from utils.data import get_config
 
-class AIOKafkaConsumer(AbstractConsumer):
-    """ Kafka consumer using aiokafka with support for topic patterns and configurable settings. """
+class KafkaConsumer(BaseConsumer, Runnable):
+    """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
 
-    def __init__(self, loop=None):
-        self._loop = loop or asyncio.get_event_loop()
+    def __init__(self, loop=asyncio.get_event_loop()):
+        self._loop = loop
 
-        # Get consumer topic(s) from config, ensuring it's a list.
+        # Get configs.
         self._topic_pattern = get_config("TOPIC_PATTERN", self)
         self._consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", self, []))
 
@@ -27,7 +28,7 @@ class AIOKafkaConsumer(AbstractConsumer):
         }
 
         # Initialize the Kafka consumer.
-        self.consumer = _AIOKafkaConsumer(*self._consumer_topic, **self.consumer_conf) if self._consumer_topic else _AIOKafkaConsumer(**self.consumer_conf)
+        self.consumer = AIOKafkaConsumer(*self._consumer_topic, **self.consumer_conf) if self._consumer_topic else AIOKafkaConsumer(**self.consumer_conf)
         self.seeking_end = None  # Used for handling 'always_read_last' mode.
 
     @staticmethod
@@ -82,5 +83,5 @@ class AIOKafkaConsumer(AbstractConsumer):
     def _log_message(self, message):
         """ Helper method to log messages if logging is enabled. """
 
-        if isinstance(self._log, FogVerseLogging):
+        if isinstance(self._log, FogLogger):
             self._log.std_log(message)

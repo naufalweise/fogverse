@@ -1,7 +1,7 @@
 from aiokafka import AIOKafkaProducer
-from consumer.base import AbstractConsumer
-from runnable import Runnable
+from consumer.base import BaseConsumer
+from fogverse.runnable import Runnable
 
-class Producer(AbstractConsumer, AIOKafkaProducer, Runnable):
+class Producer(BaseConsumer, AIOKafkaProducer, Runnable):
     """Kafka-based message producer."""
     pass

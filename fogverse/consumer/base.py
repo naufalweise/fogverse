@@ -1,37 +1,52 @@
 import cv2
 
+from typing import Any
 from consumer.storage import ConsumerStorage
-from utils.data import bytes_to_numpy
 from pickle import UnpicklingError
+from utils.data import bytes_to_numpy
 
-class AbstractConsumer:
+class BaseConsumer:
     """Base consumer class with message decoding logic."""
 
-    async def start_consumer(self):
+    def __init__(self):
+        self.auto_decode: bool = False
+
+    async def start_consumer(self) -> None:
         pass
 
-    async def receive(self):
+    async def close_consumer(self) -> None:
+        pass
+
+    async def receive(self) -> Any:
         raise NotImplementedError
 
-    async def close_consumer(self):
-        pass
-
-    def receive_error(self, *args, **kwargs):
+    def on_receive_error(self) -> None:
         pass
 
     def decode(self, data):
         """Decodes incoming data based on consumer settings."""
-        if not getattr(self, "auto_decode"):
+        if not self.auto_decode:
             return data
 
-        # Handle ConsumerStorage format
-        if isinstance(getattr(self, "consumer", None), ConsumerStorage):
-            self.message, data = data["message"], data["data"]
-            self._message_extra = data.get("extra", {})
+        # Handle ConsumerStorage message format.
+        if isinstance(self.consumer, ConsumerStorage):
+            self.message = data["message"]
+            payload = data["data"]
+            self._message_extra = payload.get("extra", {})
+            data = payload["data"]
+
+        # Try decoding as image array.
         try:
             np_arr = bytes_to_numpy(data)
             return cv2.imdecode(np_arr, cv2.IMREAD_COLOR) if np_arr.ndim == 1 else np_arr
         except (OSError, ValueError, TypeError, UnpicklingError):
             pass
-        finally:
-            return data
+
+        # Fallback to bytes decoding.
+        if isinstance(data, bytes):
+            try:
+                return data.decode()
+            except UnicodeDecodeError:
+                pass
+
+        return data

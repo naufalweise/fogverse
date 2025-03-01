@@ -1,11 +1,7 @@
 import logging
 
+from fogverse.constants import FOGV_CSV, FOGV_FILE, FOGV_STDOUT
 from utils.logger import get_csv_logger, get_file_logger, get_logger
-
-# Define custom log levels as module-level constants.
-FOGV_STDOUT = logging.INFO + 2
-FOGV_CSV = logging.INFO + 4
-FOGV_FILE = logging.INFO + 8
 
 # Register custom log levels with logging.
 logging.addLevelName(FOGV_STDOUT, "FOGV_STDOUT")
@@ -14,7 +10,7 @@ logging.addLevelName(FOGV_FILE, "FOGV_FILE")
 
 DEFAULT_FMT = '[%(asctime)s][%(levelname)s][%(name)s] %(message)s'
 
-class FogVerseLogging:
+class FogLogger:
     """Centralized logging for FogVerse, supporting standard, file, and CSV logs."""
 
     def __init__(self, name=None, dirname="logs", csv_header=None, level=FOGV_STDOUT,

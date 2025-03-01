@@ -1,12 +1,12 @@
 import asyncio
 import socket
 
-from aiokafka import AIOKafkaProducer as _AIOKafkaProducer
+from aiokafka import AIOKafkaProducer
 from utils.data import get_config
 from ..logger import FogVerseLogging
-from .base import AbstractProducer
+from .base import BaseProducer
 
-class AIOKafkaProducer(AbstractProducer):
+class KafkaProducer(BaseProducer):
     """ Kafka producer using aiokafka with configurable settings. """
 
     def __init__(self, loop=None):
@@ -22,7 +22,7 @@ class AIOKafkaProducer(AbstractProducer):
         }
 
         # Initialize the Kafka producer.
-        self.producer = _AIOKafkaProducer(**self.producer_conf)
+        self.producer = AIOKafkaProducer(**self.producer_conf)
 
     async def start_producer(self):
         """ Starts the Kafka producer. """
