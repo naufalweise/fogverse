@@ -7,6 +7,9 @@ from utils.image import compress_encoding
 class BaseProducer:
     """Base producer class with message encoding logic."""
 
+    def __init__(self):
+        self.auto_encode: bool = False
+
     async def start_producer(self):
         pass
 
@@ -19,19 +22,21 @@ class BaseProducer:
     def encode(self, data):
         """Encodes outgoing data based on producer settings."""
 
-        if isinstance(data, bytes):
+        if not self.auto_encode:
             return data
-        if not getattr(self, "auto_encode", True):
-            return data
-        if isinstance(data, str):
-            return data.encode()
-        if isinstance(data, (list, tuple)):
-            data = np.array(data)
-        if type(data).__name__ == "Tensor":
-            data = data.cpu().numpy()
-        if isinstance(data, np.ndarray):
-            return compress_encoding(data, getattr(self, "encode_encoding", None)) or numpy_to_bytes(data)
-        return bytes(data)
+        else:
+            match data:
+                case bytes():
+                    return data
+                case str():
+                    return data.encode()
+                case list() | tuple():
+                    data = np.array(data)
+                case _ if type(data).__name__ == "Tensor":
+                    data = data.cpu().numpy()
+                case np.ndarray():
+                    return compress_encoding(data, getattr(self, "encode_encoding", None)) or numpy_to_bytes(data)
+            return bytes(data)
 
     async def send(self, data, topic=None, key=None, headers=None, callback=None):
         """Sends data with optional callback execution."""
@@ -46,7 +51,7 @@ class BaseProducer:
             return future
 
         async def _call_callback_ack():
-            result = await future if future else None
+            result = future if future else None
             res = callback(result, *self._get_extra_callback_args() if hasattr(self, "_get_extra_callback_args") else ())
             return await res if asyncio.iscoroutine(res) else res
 

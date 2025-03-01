@@ -3,9 +3,9 @@ import asyncio
 import socket
 import uuid
 
-from logger import FogLogger
-from consumer import BaseConsumer
+from base import BaseConsumer
 from fogverse.runnable import Runnable
+from logger import FogLogger
 from utils.data import get_config
 
 class KafkaConsumer(BaseConsumer, Runnable):

@@ -5,10 +5,10 @@ import os
 import secrets
 import socket
 
-from utils.time import (
-    calc_datetime, get_header, get_timestamp, size_kb, get_timestamp_str
-)
 from aiokafka import ConsumerRecord, AIOKafkaProducer
+from logger.fog_logger import FogLogger
+from utils.time import calc_datetime, get_timestamp, format_timestamp
+from utils.data import get_header, get_mem_size
 
 class AbstractProfiling:
     """Defines hook methods for profiling lifecycle events."""
@@ -60,7 +60,7 @@ class Profiling(BaseProfiling):
         self.app_id = app_id or self._unique_id
         self._profiling_name = name or f"{self.__class__.__name__}_{self._unique_id}"
         self._df_header = self.DEFAULT_HEADERS
-        self._log = logger or FogVerseLogging(self._profiling_name, dirname, self._df_header, logging.FOGV_CSV)
+        self._log = logger or FogLogger(self._profiling_name, dirname, self._df_header, logging.FOGV_CSV)
 
         # Set up remote logging if enabled.
         self._logging_producer = None
@@ -104,7 +104,7 @@ class Profiling(BaseProfiling):
     def _after_receive(self, data):
         """Log data size and time taken for consumption."""
         self._log_data["consume time (ms)"] = calc_datetime(self._start)
-        self._log_data["size data received (KB)"] = size_kb(data.get("data", data) if isinstance(data, dict) else data)
+        self._log_data["size data received (KB)"] = get_mem_size(data.get("data", data) if isinstance(data, dict) else data)
 
     def _before_decode(self, _):
         self._before_decode_time = get_timestamp()
@@ -112,7 +112,7 @@ class Profiling(BaseProfiling):
     def _after_decode(self, data):
         """Log decoding time and message metadata."""
         self._log_data["decode time (ms)"] = calc_datetime(self._before_decode_time)
-        self._log_data["size data decoded (KB)"] = size_kb(data)
+        self._log_data["size data decoded (KB)"] = get_mem_size(data)
 
         if isinstance(self.message, ConsumerRecord):
             now = get_timestamp()
@@ -136,7 +136,7 @@ class Profiling(BaseProfiling):
     def _after_process(self, result):
         self._log_data.update({
             "process time (ms)": calc_datetime(self._before_process_time),
-            "size data processed (KB)": size_kb(result)
+            "size data processed (KB)": get_mem_size(result)
         })
 
     def _before_encode(self, _):
@@ -145,12 +145,12 @@ class Profiling(BaseProfiling):
     def _after_encode(self, data):
         self._log_data.update({
             "encode time (ms)": calc_datetime(self._before_encode_time),
-            "size data encoded (KB)": size_kb(data)
+            "size data encoded (KB)": get_mem_size(data)
         })
 
     def _before_send(self, data):
         """Log data size before sending."""
-        self._log_data["size data sent (KB)"] = size_kb(data)
+        self._log_data["size data sent (KB)"] = get_mem_size(data)
         self._datetime_before_send = get_timestamp()
 
     async def _send_logging_data(self, headers, data):
@@ -161,7 +161,7 @@ class Profiling(BaseProfiling):
         send_data = json.dumps({
             "app_id": self.app_id,
             "log headers": ["timestamp", *headers],
-            "log data": [get_timestamp_str(), *data],
+            "log data": [format_timestamp(), *data],
             "extras": getattr(self, "extra_remote_data", {})
         }).encode()
 

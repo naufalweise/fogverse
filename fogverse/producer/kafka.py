@@ -1,38 +1,46 @@
+import uuid
+import aiokafka
 import asyncio
-import socket
 
-from aiokafka import AIOKafkaProducer
+from base import BaseProducer
+from fogverse.runnable import Runnable
+from logger import FogLogger
 from utils.data import get_config
-from ..logger import FogVerseLogging
-from .base import BaseProducer
 
-class KafkaProducer(BaseProducer):
-    """ Kafka producer using aiokafka with configurable settings. """
+class KafkaProducer(BaseProducer, Runnable):
+    """Kafka producer using aiokafka with configurable settings."""
 
-    def __init__(self, loop=None):
-        self._loop = loop or asyncio.get_event_loop()
+    def __init__(self, loop=asyncio.get_event_loop()):
+        self._loop = loop
 
-        # Get producer configuration from environment.
-        self.producer_topic = get_config("PRODUCER_TOPIC", self)
+        # Create consumer ID
+        client_id = get_config("CLIENT_ID", default=str(uuid.uuid4()))
+
+        # Create a logger instance.
+        self._log = FogLogger(name=client_id)
+
+        # Explicit list of topics to produce to.
+        self.producer_topic = get_config("PRODUCER_TOPIC", default=[])
+
+        # Kafka producer configuration.
         self.producer_conf = {
             "loop": self._loop,
-            "bootstrap_servers": get_config("PRODUCER_SERVERS", self),
-            "client_id": get_config("CLIENT_ID", self, socket.gethostname()),
+            "bootstrap_servers": get_config("PRODUCER_SERVERS", default="localhost"),
+            "client_id": client_id,
             **getattr(self, "producer_conf", {}),
         }
 
         # Initialize the Kafka producer.
-        self.producer = AIOKafkaProducer(**self.producer_conf)
+        self.producer = aiokafka.AIOKafkaProducer(**self.producer_conf)
 
     async def start_producer(self):
         """ Starts the Kafka producer. """
 
-        self._log_message(f"Starting producer - Config: {self.producer_conf}, Topic: {self.producer_topic}")
+        self._log_message(f"KAFKA PRODUCER START - TOPIC: {self.producer_topic}, CONFIG: {self.producer_conf}")
         await self.producer.start()
 
     async def _do_send(self, data, topic=None, key=None, headers=None):
         """
-
         Sends a message to the given Kafka topic.
         If no topic is specified, uses the default producer topic.
         """
@@ -43,13 +51,7 @@ class KafkaProducer(BaseProducer):
         return await self.producer.send(topic, value=data, key=key, headers=headers)
 
     async def close_producer(self):
-        """ Gracefully stops the Kafka producer. """
+        """Gracefully stops the Kafka producer."""
 
         await self.producer.stop()
         self._log_message("Producer has closed.")
-
-    def _log_message(self, message):
-        """ Helper method to log messages if logging is enabled. """
-
-        if isinstance(self._log, FogVerseLogging):
-            self._log.std_log(message)

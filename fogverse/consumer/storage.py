@@ -9,8 +9,8 @@ class ConsumerStorage(BaseConsumer, AbstractProducer, Runnable):
     """A consumer that stores messages in an async queue with optional message retention."""
 
     def __init__(self, keep_messages=False):
-        self.keep_messages = keep_messages
         self.queue = asyncio.Queue()
+        self.keep_messages = keep_messages
         self._consume_time = None
 
     def _before_receive(self):

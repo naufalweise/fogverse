@@ -1,6 +1,6 @@
-from base import BaseConsumer
 from kafka import KafkaConsumer
-from open_cv import OpenCV
+# NOTE: This class may not be useful in most cases, so it is commented out.
+# from open_cv import OpenCV
 from storage import ConsumerStorage
 
-__all__ = ["BaseConsumer", "KafkaConsumer", "OpenCV", "ConsumerStorage"]
+__all__ = ["KafkaConsumer", "ConsumerStorage"]
