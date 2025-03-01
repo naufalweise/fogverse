@@ -1,13 +1,11 @@
 import asyncio
 import socket
-import sys
 import uuid
-import cv2
-from aiokafka import AIOKafkaConsumer as _AIOKafkaConsumer, AIOKafkaProducer as _AIOKafkaProducer
-from utils.data import get_config
-from .logging import FogVerseLogging
-from .base import AbstractConsumer, AbstractProducer
 
+from ..logging import FogVerseLogging
+from .base import AbstractConsumer
+from aiokafka import AIOKafkaConsumer as _AIOKafkaConsumer
+from utils.data import get_config
 
 class AIOKafkaConsumer(AbstractConsumer):
     """ Kafka consumer using aiokafka with support for topic patterns and configurable settings. """
@@ -86,87 +84,3 @@ class AIOKafkaConsumer(AbstractConsumer):
 
         if isinstance(self._log, FogVerseLogging):
             self._log.std_log(message)
-
-class AIOKafkaProducer(AbstractProducer):
-    """ Kafka producer using aiokafka with configurable settings. """
-
-    def __init__(self, loop=None):
-        self._loop = loop or asyncio.get_event_loop()
-
-        # Get producer configuration from environment.
-        self.producer_topic = get_config("PRODUCER_TOPIC", self)
-        self.producer_conf = {
-            "loop": self._loop,
-            "bootstrap_servers": get_config("PRODUCER_SERVERS", self),
-            "client_id": get_config("CLIENT_ID", self, socket.gethostname()),
-            **getattr(self, "producer_conf", {}),
-        }
-
-        # Initialize the Kafka producer.
-        self.producer = _AIOKafkaProducer(**self.producer_conf)
-
-    async def start_producer(self):
-        """ Starts the Kafka producer. """
-
-        self._log_message(f"Starting producer - Config: {self.producer_conf}, Topic: {self.producer_topic}")
-        await self.producer.start()
-
-    async def _do_send(self, data, topic=None, key=None, headers=None):
-        """
-
-        Sends a message to the given Kafka topic.
-        If no topic is specified, uses the default producer topic.
-        """
-
-        if not (topic := topic or self.producer_topic):
-            raise ValueError("Topic should not be None.")
-
-        return await self.producer.send(topic, value=data, key=key, headers=headers)
-
-    async def close_producer(self):
-        """ Gracefully stops the Kafka producer. """
-
-        await self.producer.stop()
-        self._log_message("Producer has closed.")
-
-    def _log_message(self, message):
-        """ Helper method to log messages if logging is enabled. """
-
-        if isinstance(self._log, FogVerseLogging):
-            self._log.std_log(message)
-
-
-class OpenCVConsumer(AbstractConsumer):
-    """ Video frame consumer using OpenCV. Reads from a camera or video device. """
-
-    def __init__(self, loop=None, executor=None):
-        self._device = get_config("DEVICE", self, 0)
-
-        # Initialize OpenCV video capture device.
-        self.consumer = getattr(self, "consumer", None) or cv2.VideoCapture(self._device)
-        self._loop = loop or asyncio.get_event_loop()
-        self._executor = executor
-
-    def close_consumer(self):
-        """ Releases the OpenCV video capture device. """
-
-        self.consumer.release()
-        self._log_message("OpenCVConsumer has closed.")
-
-    async def receive(self):
-        """ Reads a frame from the video capture. If reading fails, handle the error. """
-
-        success, frame = self.consumer.read()
-        return frame if success else await self._handle_receive_error()
-
-    async def _handle_receive_error(self):
-        """ Handles video capture errors and exits the process. """
-
-        self._log_message("OpenCVConsumer has stopped due to an error.")
-        sys.exit(0)
-
-    def _log_message(self, message):
-        """ Helper method to log messages if logging is enabled. """
-
-        if isinstance(self._log, FogVerseLogging):
-            self._log

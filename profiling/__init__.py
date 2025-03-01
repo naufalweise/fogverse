@@ -5,7 +5,7 @@ import os
 import secrets
 import socket
 
-from utils import (
+from utils.time import (
     calc_datetime, get_header, get_timestamp, size_kb, get_timestamp_str
 )
 from aiokafka import ConsumerRecord, AIOKafkaProducer
