@@ -1,7 +1,7 @@
 import asyncio
 import cv2
 
-from ..logging import FogVerseLogging
+from ..logger import FogVerseLogging
 from consumer.base import AbstractConsumer
 from utils.data import get_config
 

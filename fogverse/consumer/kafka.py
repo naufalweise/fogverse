@@ -2,7 +2,7 @@ import asyncio
 import socket
 import uuid
 
-from ..logging import FogVerseLogging
+from ..logger import FogVerseLogging
 from .base import AbstractConsumer
 from aiokafka import AIOKafkaConsumer as _AIOKafkaConsumer
 from utils.data import get_config

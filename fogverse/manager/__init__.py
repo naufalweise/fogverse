@@ -6,11 +6,11 @@ import sys
 import traceback
 import uuid
 
-from ..logging import FOGV_FILE, FogVerseLogging
+from ..logger import FOGV_FILE, FogVerseLogging
 from ..utils.admin import setup_topics, read_topic_yaml
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from confluent_kafka.admin import AdminClient
-from constants import *
+from fogverse.constants import *
 from pathlib import Path
 
 # Default Kafka topic configuration settings.

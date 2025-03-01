@@ -1,7 +1,7 @@
 import logging
 
-from ..logging.formatter import DelimitedFormatter
-from ..logging.handler import LogFileRotator
+from ..logger.formatter import DelimitedFormatter
+from ..logger.handler import LogFileRotator
 from pathlib import Path
 
 def get_logger(name=None, level=logging.DEBUG, handlers=None, formatter=None):

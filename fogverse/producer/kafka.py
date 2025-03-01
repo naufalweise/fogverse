@@ -3,7 +3,7 @@ import socket
 
 from aiokafka import AIOKafkaProducer as _AIOKafkaProducer
 from utils.data import get_config
-from ..logging import FogVerseLogging
+from ..logger import FogVerseLogging
 from .base import AbstractProducer
 
 class AIOKafkaProducer(AbstractProducer):
