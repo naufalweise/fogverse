@@ -1,6 +1,6 @@
 import asyncio
 
-from .base import BaseConsumer
+from fogverse.consumer.base import BaseConsumer
 from fogverse.producer.base import BaseProducer
 from fogverse.runnable import Runnable
 from fogverse.utils.time import calc_datetime, get_timestamp

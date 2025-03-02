@@ -1,40 +1,15 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import cv2
 import os
 
 from fogverse.consumer import ConsumerStorage
+from fogverse.consumer.open_cv import ConsumerOpenCV
 from fogverse.producer import KafkaProducer
 from fogverse.utils.data import numpy_to_bytes
 
 # Set environment variables.
 os.environ["PRODUCER_SERVERS"] = "localhost:9092"
 os.environ["PRODUCER_TOPIC"] = "processed-frames"
-
-class OpenCV(ConsumerStorage):
-    """Captures frames from a video source."""
-
-    def __init__(self, device_id=0):
-        super().__init__(keep_messages=False)
-        self.cap = cv2.VideoCapture(device_id)
-        self.executor = ThreadPoolExecutor(max_workers=1)
-
-    async def receive(self):
-        """Capture a frame from the camera."""
-
-        loop = asyncio.get_event_loop()
-        success, frame = await loop.run_in_executor(
-            self.executor,
-            self.cap.read
-        )
-        return frame if success else None
-
-    async def close_consumer(self):
-        """Release the camera when done."""
-
-        if hasattr(self, "cap") and self.cap.isOpened():
-            self.cap.release()
-        self.executor.shutdown()
 
 class FrameProcessor(KafkaProducer):
     """Processes video frames and sends them to Kafka."""
@@ -75,7 +50,7 @@ async def main():
 
     try:
         # Create components.
-        camera_consumer = OpenCV(device_id=0)
+        camera_consumer = ConsumerOpenCV()
         processor = FrameProcessor(camera_consumer)
 
         # Start both components.

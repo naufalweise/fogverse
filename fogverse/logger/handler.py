@@ -1,4 +1,4 @@
-from .formatter import DelimitedFormatter
+from fogverse.logger.formatter import DelimitedFormatter
 from logging.handlers import RotatingFileHandler
 from os import path
 

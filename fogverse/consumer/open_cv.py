@@ -1,44 +1,32 @@
 import asyncio
-import sys
 import cv2
 
-from .base import BaseConsumer
-from fogverse.logger import FogLogger
+from concurrent.futures import ThreadPoolExecutor
+from fogverse.consumer.storage import ConsumerStorage
 from fogverse.utils.data import get_config
 
-class ConsumerOpenCV(BaseConsumer):
+class ConsumerOpenCV(ConsumerStorage):
     """Video frame consumer using OpenCV. Reads from a camera or video device."""
 
-    def __init__(self, loop=asyncio.get_event_loop(), executor=None):
+    def __init__(self, executor=ThreadPoolExecutor(max_workers=1)):
         super().__init__()
 
-        self._device = get_config("DEVICE", self, 0)
-
-        # Initialize OpenCV video capture device.
-        self.consumer = getattr(self, "consumer", None) or cv2.VideoCapture(self._device)
-        self._loop = loop
+        self._device = get_config("DEVICE", default=0)
         self._executor = executor
+        self.consumer = getattr(self, "consumer", None) or cv2.VideoCapture(self._device)
 
     def close_consumer(self):
         """Releases the OpenCV video capture device."""
 
         self.consumer.release()
-        self._log_message("OpenCV has closed.")
+        self._executor.shutdown()
 
     async def receive(self):
-        """Reads a frame from the video capture. If reading fails, handle the error."""
+        """Capture a frame."""
 
-        success, frame = self.consumer.read()
-        return frame if success else await self._handle_receive_error()
-
-    async def _handle_receive_error(self):
-        """Handles video capture errors and exits the process."""
-
-        self._log_message("OpenCV has stopped due to an error.")
-        sys.exit(0)
-
-    def _log_message(self, message):
-        """Helper method to log messages if logging is enabled."""
-
-        if isinstance(self._log, FogLogger):
-            self._log
+        loop = asyncio.get_event_loop()
+        success, frame = await loop.run_in_executor(
+            self._executor,
+            self.consumer.read
+        )
+        return frame if success else None
