@@ -1,8 +1,8 @@
 import asyncio
 import numpy as np
 
-from ..utils.data import numpy_to_bytes
-from ..utils.image import compress_encoding
+from fogverse.utils.data import numpy_to_bytes
+from fogverse.utils.image import compress_encoding
 
 class BaseProducer:
     """Base producer class with message encoding logic."""

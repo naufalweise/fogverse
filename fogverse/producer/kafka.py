@@ -2,12 +2,11 @@ import uuid
 import aiokafka
 import asyncio
 
-from fogverse.consumer.base import BaseConsumer
-
-from ..logger import FogLogger
-from ..runnable import Runnable
-from ..utils.data import get_config
 from .base import BaseProducer
+from fogverse.consumer.base import BaseConsumer
+from fogverse.logger import FogLogger
+from fogverse.runnable import Runnable
+from fogverse.utils.data import get_config
 
 class KafkaProducer(BaseProducer, BaseConsumer, Runnable):
     """Kafka producer using aiokafka with configurable settings."""
@@ -35,7 +34,7 @@ class KafkaProducer(BaseProducer, BaseConsumer, Runnable):
         self.producer = aiokafka.AIOKafkaProducer(**self.producer_conf)
 
     async def start_producer(self):
-        """ Starts the Kafka producer. """
+        """Starts the Kafka producer."""
 
         self._log.std_log(f"KAFKA PRODUCER START - TOPIC: {self.producer_topic}, CONFIG: {self.producer_conf}")
         await self.producer.start()

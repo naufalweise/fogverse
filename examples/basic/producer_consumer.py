@@ -11,14 +11,15 @@ os.environ["CONSUMER_TOPIC"] = "pre-processed"
 os.environ["PRODUCER_TOPIC"] = "pre-processed"
 
 class MessageProducer(KafkaProducer):
-    """Produces messages to a Kafka topic"""
+    """Produces messages to a Kafka topic."""
     
     def __init__(self):
         super().__init__()
         self.counter = 0
-        
+
     async def receive(self):
-        """Generate a new message every second"""
+        """Generate a new message every second."""
+
         await asyncio.sleep(1)
         message = f"Message {self.counter}"
         self.counter += 1
@@ -26,44 +27,48 @@ class MessageProducer(KafkaProducer):
         return message
     
     def encode(self, data):
-        """Convert string to bytes"""
+        """Convert string to bytes."""
+
         return data.encode()
 
 class MessageConsumer(KafkaConsumer):
-    """Consumes and processes messages from a Kafka topic"""
+    """Consumes and processes messages from a Kafka topic."""
     
     def __init__(self):
         super().__init__()
         self.producer_topic = "post-processed"
     
     def decode(self, data):
-        """Convert bytes to string"""
+        """Convert bytes to string."""
+
         if isinstance(data, bytes):
             return data.decode()
         return data
     
     def process(self, data):
-        """Process the received message"""
-        processed = f"Processed: {data}"
-        print(f"Received: {data}, Sending: {processed}")
-        return processed
+        """Process the received message."""
+
+        print(f"Received: {data}")
+        return f"Processed: {data}"
     
     def encode(self, data):
-        """Convert processed string to bytes"""
+        """Convert processed string to bytes."""
+
         return data.encode()
 
 async def run_producer():
-    """Run the producer"""
+    """Run the producer."""
     producer = MessageProducer()
     await producer.run()
 
 async def run_consumer():
-    """Run the consumer"""
+    """Run the consumer."""
     consumer = MessageConsumer()
     await consumer.run()
 
 async def main():
-    """Run producer and consumer concurrently"""
+    """Run producer and consumer concurrently."""
+
     try:
         # Run both components at the same time.
         await asyncio.gather(

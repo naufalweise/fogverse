@@ -3,12 +3,11 @@ import asyncio
 import socket
 import uuid
 
-from fogverse.producer.base import BaseProducer
-
-from ..runnable import Runnable
-from ..utils.data import get_config
 from .base import BaseConsumer
 from fogverse.logger import FogLogger
+from fogverse.producer.base import BaseProducer
+from fogverse.runnable import Runnable
+from fogverse.utils.data import get_config
 
 class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
     """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
@@ -50,7 +49,7 @@ class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
         return topic.split(",") if isinstance(topic, str) else topic
 
     async def start_consumer(self):
-        """ Starts the Kafka consumer and subscribes to topics. """
+        """Starts the Kafka consumer and subscribes to topics."""
 
         self._log.std_log(f"KAFKA CONSUMER START - TOPIC: {self._consumer_topic}, CONFIG: {self.consumer_conf}")
         await self.consumer.start()

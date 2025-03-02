@@ -1,8 +1,8 @@
 import logging
 
-from ..constants import DEFAULT_FMT
-from ..logger.formatter import DelimitedFormatter
-from ..logger.handler import LogFileRotator
+from fogverse.constants import DEFAULT_FMT
+from fogverse.logger.formatter import DelimitedFormatter
+from fogverse.logger.handler import LogFileRotator
 from pathlib import Path
 
 def get_base_logger(name=None, level=logging.DEBUG, handlers=None, formatter=None):

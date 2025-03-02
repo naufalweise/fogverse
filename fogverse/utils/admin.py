@@ -1,9 +1,9 @@
 import os
 import yaml
 
-from ..constants import DEFAULT_NUM_PARTITIONS
 from confluent_kafka.admin import AdminClient, NewTopic, ConfigResource, NewPartitions
 from confluent_kafka.error import KafkaError
+from fogverse.constants import DEFAULT_NUM_PARTITIONS
 from pathlib import Path
 
 def resolve_server_env(server):
