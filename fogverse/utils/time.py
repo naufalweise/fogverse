@@ -1,6 +1,6 @@
 """Manages all datetime-related operations."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 # default format for timestamps
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
@@ -8,7 +8,7 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 def get_timestamp(utc=True):
     """Returns the current timestamp, either UTC or local."""
 
-    return datetime.now(datetime.timezone.utc) if utc else datetime.now()
+    return datetime.now(timezone.utc) if utc else datetime.now()
 
 def format_timestamp(date=None, utc=True, format=DATETIME_FORMAT):
     """Formats a datetime object as a string."""

@@ -37,7 +37,6 @@ class ConsumerStorage(BaseConsumer, BaseProducer, Runnable):
             self.queue.get_nowait() # Discard oldest message if queue isn't empty.
 
         obj = {
-            "message": self.message,
             "data": data,
             "extra": self._get_send_extra(data),
         }

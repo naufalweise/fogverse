@@ -10,21 +10,30 @@ from fogverse.utils.data import numpy_to_bytes
 os.environ["PRODUCER_SERVERS"] = "localhost:9092"
 os.environ["PRODUCER_TOPIC"] = "processed-frames"
 
+# Create shared queue
+frame_queue = asyncio.Queue(maxsize=10)
+
 class OpenCV(ConsumerStorage):
     """Captures frames from a video source"""
-    
+
     def __init__(self, device_id=0):
         super().__init__(keep_messages=False)
         self.cap = cv2.VideoCapture(device_id)
-        
+
     async def receive(self):
         """Capture a frame from the camera"""
+
         success, frame = self.cap.read()
         if not success:
             print("Failed to capture frame.")
             return None
         return frame
-    
+
+    async def send(self, data):
+        """Override send to put the frame in the shared queue"""
+        if data is not None:
+            await frame_queue.put(data)
+
     async def close_consumer(self):
         """Release the camera when done"""
         if hasattr(self, "cap") and self.cap.isOpened():
@@ -32,26 +41,28 @@ class OpenCV(ConsumerStorage):
 
 class FrameProcessor(KafkaProducer):
     """Processes video frames and sends them to Kafka"""
-    
+
     def __init__(self):
-        ConsumerStorage.__init__(self)
-        KafkaProducer.__init__(self)
-        
+        super().__init__()
+
+    async def receive(self):
+        return await frame_queue.get()
+
     def process(self, frame):
         """Process the frame (example: apply grayscale)"""
         if frame is None:
             return None
-            
+
         # Convert to grayscale then back to BGR for visualization.
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         processed = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-        
+
         # Display the processed frame.
-        cv2.imshow('Processed Frame %s.', processed)
+        cv2.imshow('Processed Frame', processed)
         cv2.waitKey(1)
-        
+
         return processed
-    
+
     def encode(self, frame):
         """Convert NumPy array to bytes"""
         if frame is None:
@@ -64,16 +75,13 @@ async def main():
         # Create components.
         camera_consumer = OpenCV(device_id=0)
         processor = FrameProcessor()
-        
-        # Connect consumer to processor.
-        processor.consumer = camera_consumer
-        
+
         # Start both components.
         await asyncio.gather(
             camera_consumer.run(),
             processor.run()
         )
-        
+
     except KeyboardInterrupt:
         print("Stopping...")
         cv2.destroyAllWindows()
