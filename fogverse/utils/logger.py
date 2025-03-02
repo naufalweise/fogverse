@@ -1,11 +1,11 @@
-from fogverse.constants import DEFAULT_FMT
+from fogverse.constants import DEFAULT_FMT, FOGV_STDOUT, FOGV_TXT, FOGV_CSV
 from fogverse.logger.formatter import DelimitedFormatter
-from fogverse.logger.handler import LogFileRotator
+from fogverse.logger.rotator import LogFileRotator
 from pathlib import Path
 
 import logging
 
-def get_base_logger(name=None, level=logging.DEBUG, handlers=None, formatter=None):
+def get_base_logger(name=None, level=FOGV_STDOUT, handlers=None, formatter=None):
     """Create and configure a logger that outputs messages to the console or specified handlers."""
 
     # Get or create a logger with the given name.
@@ -46,7 +46,7 @@ def get_txt_logger(name=None, dirname="logs", filename=None, mode="w", **kwargs)
     handler.setFormatter(logging.Formatter(fmt=DEFAULT_FMT))
 
     # Create and return a logger using the base logger function, with the file handler attached.
-    return get_base_logger(name, handlers=handler, **kwargs)
+    return get_base_logger(name, level=FOGV_TXT, handlers=handler, **kwargs)
 
 def get_csv_logger(name=None, dirname="logs", filename=None, mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", header=[], **kwargs):
     """Create a CSV-based logger that writes logs to a persistent file."""
@@ -67,4 +67,4 @@ def get_csv_logger(name=None, dirname="logs", filename=None, mode="w", delimiter
     handler.setFormatter(DelimitedFormatter(fmt=fmt, datefmt=datefmt, delimiter=delimiter))
 
     # Create and return a logger using the base logger function, with the rotating file handler attached.
-    return get_base_logger(name, handlers=handler, **kwargs)
+    return get_base_logger(name, level=FOGV_CSV, handlers=handler, **kwargs)

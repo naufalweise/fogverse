@@ -13,6 +13,6 @@ FOGV_CMD_REQUEST_DEPLOY = 'REQUEST_DEPLOY'
 DEFAULT_FMT = '[%(asctime)s][%(levelname)s][%(name)s] %(message)s'
 
 # Numbers are arbitrary, but must be unique.
-FOGV_STDOUT = logging.INFO + 4
-FOGV_CSV = logging.INFO + 8
-FOGV_FILE = logging.INFO + 12
+FOGV_STDOUT = 24
+FOGV_TXT = 25
+FOGV_CSV = 26
