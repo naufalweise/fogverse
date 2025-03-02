@@ -3,18 +3,18 @@ import asyncio
 import socket
 import uuid
 
+from fogverse.producer.base import BaseProducer
+
 from ..runnable import Runnable
 from ..utils.data import get_config
 from .base import BaseConsumer
 from fogverse.logger import FogLogger
 
-class KafkaConsumer(BaseConsumer, Runnable):
+class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
     """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
 
-    async def __init__(self, loop=asyncio.get_event_loop(), read_last=False):
+    def __init__(self, read_last=False):
         super().__init__()
-
-        self._loop = loop
 
         # Create consumer ID
         group_id = get_config("GROUP_ID", default=socket.gethostname())
@@ -22,13 +22,13 @@ class KafkaConsumer(BaseConsumer, Runnable):
 
         # Create a logger instance.
         self._log = FogLogger(name=client_id)
+        self.read_last = read_last
 
         # Explicit list of topics to consume from.
         self._consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", default=[]))
 
         # Kafka consumer configuration.
         self.consumer_conf = {
-            "loop": self._loop,
             "bootstrap_servers": get_config("CONSUMER_SERVERS", default="localhost"),
             "group_id": group_id,
             "client_id": client_id,
@@ -41,7 +41,7 @@ class KafkaConsumer(BaseConsumer, Runnable):
             **self.consumer_conf
         )
 
-        if read_last: await asyncio.ensure_future(self.consumer.seek_to_end())
+        if read_last: self.seeking_end = asyncio.ensure_future(self.consumer.seek_to_end())
 
     @staticmethod
     def _parse_topics(topic):
@@ -61,6 +61,7 @@ class KafkaConsumer(BaseConsumer, Runnable):
     async def receive(self):
         """Fetches a single message from Kafka."""
 
+        if self.read_last and asyncio.isfuture(self.seeking_end): await self.seeking_end
         return await self.consumer.getone()
 
     async def close_consumer(self):

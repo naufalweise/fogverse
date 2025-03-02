@@ -2,18 +2,18 @@ import uuid
 import aiokafka
 import asyncio
 
+from fogverse.consumer.base import BaseConsumer
+
 from ..logger import FogLogger
 from ..runnable import Runnable
 from ..utils.data import get_config
 from .base import BaseProducer
 
-class KafkaProducer(BaseProducer, Runnable):
+class KafkaProducer(BaseProducer, BaseConsumer, Runnable):
     """Kafka producer using aiokafka with configurable settings."""
 
-    def __init__(self, loop=asyncio.get_event_loop()):
+    def __init__(self):
         super().__init__()
-
-        self._loop = loop
 
         # Create consumer ID
         client_id = get_config("CLIENT_ID", default=str(uuid.uuid4()))
@@ -26,7 +26,6 @@ class KafkaProducer(BaseProducer, Runnable):
 
         # Kafka producer configuration.
         self.producer_conf = {
-            "loop": self._loop,
             "bootstrap_servers": get_config("PRODUCER_SERVERS", default="localhost"),
             "client_id": client_id,
             **getattr(self, "producer_conf", {}),

@@ -18,7 +18,7 @@ class BaseConsumer:
         pass
 
     async def receive(self) -> Any:
-        raise NotImplementedError
+        pass
 
     def on_receive_error(self) -> None:
         pass

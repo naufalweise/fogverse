@@ -3,15 +3,14 @@ import os
 
 from fogverse.consumer import KafkaConsumer
 from fogverse.producer import KafkaProducer
-from fogverse.runnable import Runnable
 
 # Set environment variables for Kafka connections.
 os.environ["CONSUMER_SERVERS"] = "localhost:9092"
 os.environ["PRODUCER_SERVERS"] = "localhost:9092"
-os.environ["CONSUMER_TOPIC"] = "input-topic"
-os.environ["PRODUCER_TOPIC"] = "output-topic"
+os.environ["CONSUMER_TOPIC"] = "pre-processed"
+os.environ["PRODUCER_TOPIC"] = "pre-processed"
 
-class MessageProducer(KafkaProducer, Runnable):
+class MessageProducer(KafkaProducer):
     """Produces messages to a Kafka topic"""
     
     def __init__(self):
@@ -30,12 +29,12 @@ class MessageProducer(KafkaProducer, Runnable):
         """Convert string to bytes"""
         return data.encode()
 
-class MessageConsumer(KafkaConsumer, Runnable):
+class MessageConsumer(KafkaConsumer):
     """Consumes and processes messages from a Kafka topic"""
     
     def __init__(self):
         super().__init__()
-        self.producer_topic = "output-topic"
+        self.producer_topic = "post-processed"
     
     def decode(self, data):
         """Convert bytes to string"""

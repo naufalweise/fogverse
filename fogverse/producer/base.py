@@ -18,7 +18,7 @@ class BaseProducer:
         pass
 
     async def _do_send(self, data, *args, **kwargs) -> asyncio.Future:
-        raise NotImplementedError
+        pass
 
     def encode(self, data):
         """Encodes outgoing data based on producer settings."""

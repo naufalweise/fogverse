@@ -1,0 +1,1 @@
+[2025-03-02 11:36:27,736][FOGV_FILE][file_fa28eff1-b199-4869-ba0d-3b61a847a89b] KAFKA CONSUMER START - TOPIC: ['pre-processed'], CONFIG: {'bootstrap_servers': 'localhost:9092', 'group_id': 'bryan-ilman', 'client_id': 'fa28eff1-b199-4869-ba0d-3b61a847a89b'}
