@@ -1,12 +1,12 @@
 """Manages all data and configuration operations."""
 
+from io import BytesIO
+
 import inspect
 import numpy as np
 import os
 import sys
 import uuid
-
-from io import BytesIO
 
 def get_cam_id():
     """Generates a camera ID using an environment variable if available, otherwise creates a UUID."""

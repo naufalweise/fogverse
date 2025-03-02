@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 
 # default format for timestamps
-DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 def get_timestamp(utc=True):
     """Returns the current timestamp, either UTC or local."""

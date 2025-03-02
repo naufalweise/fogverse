@@ -1,9 +1,9 @@
 """Manages all image-related operations."""
 
+from fogverse.utils.data import bytes_to_numpy, numpy_to_bytes
+
 import base64
 import cv2
-
-from fogverse.utils.data import bytes_to_numpy, numpy_to_bytes
 
 def _encode(img, encoding, *args):
     """Encodes an image using OpenCV."""
