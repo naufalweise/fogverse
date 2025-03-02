@@ -1,0 +1,70 @@
+version: "3"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  frame-producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frame-producer
+    depends_on:
+      - kafka
+    environment:
+      - APP_ID=frame-producer
+      - KAFKA_SERVERS=kafka:29092
+      - PRODUCER_SERVERS=kafka:29092
+      - PRODUCER_TOPIC=raw-frames
+      - LOGGING_PRODUCER_SERVERS=kafka:29092
+
+  frame-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frame-processor
+    depends_on:
+      - kafka
+      - frame-producer
+    environment:
+      - APP_ID=frame-processor
+      - KAFKA_SERVERS=kafka:29092
+      - CONSUMER_SERVERS=kafka:29092
+      - CONSUMER_TOPIC=raw-frames
+      - PRODUCER_SERVERS=kafka:29092
+      - PRODUCER_TOPIC=processed-frames
+      - LOGGING_PRODUCER_SERVERS=kafka:29092
+
+  result-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: result-consumer
+    depends_on:
+      - kafka
+      - frame-processor
+    environment:
+      - APP_ID=result-consumer
+      - KAFKA_SERVERS=kafka:29092
+      - CONSUMER_SERVERS=kafka:29092
+      - CONSUMER_TOPIC=processed-frames
+      - LOGGING_PRODUCER_SERVERS=kafka:29092

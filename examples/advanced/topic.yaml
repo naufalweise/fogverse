@@ -1,0 +1,22 @@
+localhost:9092:
+  topics:
+    - name: raw-frames
+      partitions: 1
+      config:
+        retention.ms: 60000
+        segment.bytes: 1048576
+    - name: processed-frames
+      partitions: 1
+      config:
+        retention.ms: 60000
+        segment.bytes: 1048576
+    - name: fogverse-commands
+      partitions: 1
+      config:
+        retention.ms: 30000
+        segment.bytes: 1048576
+    - name: fogverse-profiling
+      partitions: 1
+      config:
+        retention.ms: 86400000
+        segment.bytes: 1048576

@@ -2,9 +2,9 @@ import uuid
 import aiokafka
 import asyncio
 
-from .base import BaseProducer
 from fogverse.consumer.base import BaseConsumer
 from fogverse.logger import FogLogger
+from fogverse.producer.base import BaseProducer
 from fogverse.runnable import Runnable
 from fogverse.utils.data import get_config
 
