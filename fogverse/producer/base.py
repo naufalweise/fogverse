@@ -17,7 +17,7 @@ class BaseProducer:
     async def close_producer(self):
         pass
 
-    async def _do_send(self, data, *args, **kwargs) -> asyncio.Future:
+    async def send(self, data, *args, **kwargs) -> asyncio.Future:
         pass
 
     def encode(self, data):
@@ -38,22 +38,3 @@ class BaseProducer:
                 case np.ndarray():
                     return compress_encoding(data, getattr(self, "encode_encoding", None)) or numpy_to_bytes(data)
             return bytes(data)
-
-    async def send(self, data, topic=None, key=None, headers=None, callback=None):
-        """Sends data with optional callback execution."""
-
-        key = key or getattr(self.message, "key", None)
-        headers = list(headers or getattr(self.message, "headers", []))
-        topic = topic or getattr(self, "producer_topic", "")
-
-        future = await self._do_send(data, topic=topic, key=key, headers=headers)
-
-        if not callable(callback := callback or getattr(self, "callback", None)):
-            return future
-
-        async def _call_callback_ack():
-            result = future if future else None
-            res = callback(result, *self._get_extra_callback_args() if hasattr(self, "_get_extra_callback_args") else ())
-            return await res if asyncio.iscoroutine(res) else res
-
-        return asyncio.ensure_future(_call_callback_ack())  # Return an awaitable future.

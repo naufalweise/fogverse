@@ -1,2 +1,0 @@
-[2025-03-02 11:31:11,430][FOGV_FILE][file_4d0167e5-c6b6-422f-aff6-c811c542cbc7] KAFKA PRODUCER START - TOPIC: pre-processed, CONFIG: {'bootstrap_servers': 'localhost:9092', 'client_id': '4d0167e5-c6b6-422f-aff6-c811c542cbc7'}
-[2025-03-02 11:31:43,208][FOGV_FILE][file_4d0167e5-c6b6-422f-aff6-c811c542cbc7] Producer has closed.

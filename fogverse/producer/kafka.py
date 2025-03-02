@@ -40,16 +40,28 @@ class KafkaProducer(BaseProducer, BaseConsumer, Runnable):
         self._log.std_log(f"KAFKA PRODUCER START - TOPIC: {self.producer_topic}, CONFIG: {self.producer_conf}")
         await self.producer.start()
 
-    async def _do_send(self, data, topic=None, key=None, headers=None):
+    async def send(self, data, topic=None, key=None, headers=None, callback=None):
         """
-        Sends a message to the given Kafka topic.
-        If no topic is specified, uses the default producer topic.
+        Sends a message to the given Kafka topic with optional callback execution.
         """
+
+        key = key or getattr(self.message, "key", None)
+        headers = list(headers or getattr(self.message, "headers", []))
+        topic = topic or getattr(self, "producer_topic", "")
 
         if not (topic := topic or self.producer_topic):
             raise ValueError("Topic should not be None.")
+        future = await self.producer.send(topic, value=data, key=key, headers=headers)
 
-        return await self.producer.send(topic, value=data, key=key, headers=headers)
+        if not callable(callback := callback or getattr(self, "callback", None)):
+            return future
+
+        async def _call_callback_ack():
+            result = future if future else None
+            res = callback(result, *self._get_extra_callback_args() if hasattr(self, "_get_extra_callback_args") else ())
+            return await res if asyncio.iscoroutine(res) else res
+
+        return asyncio.ensure_future(_call_callback_ack())  # Return an awaitable future.
 
     async def close_producer(self):
         """Gracefully stops the Kafka producer."""
