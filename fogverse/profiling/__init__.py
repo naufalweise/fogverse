@@ -6,9 +6,9 @@ import secrets
 import socket
 
 from aiokafka import ConsumerRecord, AIOKafkaProducer
-from logger.fog_logger import FogLogger
-from utils.time import calc_datetime, get_timestamp, format_timestamp
-from utils.data import get_header, get_mem_size
+from fogverse.logger import FogLogger
+from ..utils.time import calc_datetime, get_timestamp, format_timestamp
+from ..utils.data import get_header, get_mem_size
 
 class AbstractProfiling:
     """Defines hook methods for profiling lifecycle events."""

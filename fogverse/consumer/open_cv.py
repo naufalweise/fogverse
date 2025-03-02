@@ -2,14 +2,16 @@ import asyncio
 import sys
 import cv2
 
-from logger import FogLogger
-from consumer.base import BaseConsumer
-from utils.data import get_config
+from ..logger import FogLogger
+from ..utils.data import get_config
+from .base import BaseConsumer
 
 class OpenCV(BaseConsumer):
     """ Video frame consumer using OpenCV. Reads from a camera or video device. """
 
     def __init__(self, loop=asyncio.get_event_loop(), executor=None):
+        super().__init__()
+
         self._device = get_config("DEVICE", self, 0)
 
         # Initialize OpenCV video capture device.

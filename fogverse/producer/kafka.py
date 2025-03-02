@@ -2,15 +2,17 @@ import uuid
 import aiokafka
 import asyncio
 
-from base import BaseProducer
-from fogverse.runnable import Runnable
-from logger import FogLogger
-from utils.data import get_config
+from ..logger import FogLogger
+from ..runnable import Runnable
+from ..utils.data import get_config
+from .base import BaseProducer
 
 class KafkaProducer(BaseProducer, Runnable):
     """Kafka producer using aiokafka with configurable settings."""
 
     def __init__(self, loop=asyncio.get_event_loop()):
+        super().__init__()
+
         self._loop = loop
 
         # Create consumer ID
@@ -36,7 +38,7 @@ class KafkaProducer(BaseProducer, Runnable):
     async def start_producer(self):
         """ Starts the Kafka producer. """
 
-        self._log_message(f"KAFKA PRODUCER START - TOPIC: {self.producer_topic}, CONFIG: {self.producer_conf}")
+        self._log.std_log(f"KAFKA PRODUCER START - TOPIC: {self.producer_topic}, CONFIG: {self.producer_conf}")
         await self.producer.start()
 
     async def _do_send(self, data, topic=None, key=None, headers=None):
@@ -54,4 +56,4 @@ class KafkaProducer(BaseProducer, Runnable):
         """Gracefully stops the Kafka producer."""
 
         await self.producer.stop()
-        self._log_message("Producer has closed.")
+        self._log.std_log("Producer has closed.")

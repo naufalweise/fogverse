@@ -12,6 +12,7 @@ class Runnable:
     """
 
     def __init__(self):
+        super().__init__()
         self._started = False
         self._closed = False
         self.message: Optional[Any] = None

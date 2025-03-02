@@ -1,8 +1,8 @@
 import logging
 
 from ..constants import DEFAULT_FMT
-from logger.formatter import DelimitedFormatter
-from logger.handler import LogFileRotator
+from ..logger.formatter import DelimitedFormatter
+from ..logger.handler import LogFileRotator
 from pathlib import Path
 
 def get_base_logger(name=None, level=logging.DEBUG, handlers=None, formatter=None):
@@ -32,7 +32,7 @@ def get_file_logger(name=None, dirname="logs", filename=None, handler=None, form
     handler = handler or logging.FileHandler(filename, mode=mode)
     handler.setFormatter(formatter or logging.Formatter(fmt=DEFAULT_FMT))
 
-    return get_logger(name, handlers=handler, **kwargs)
+    return get_base_logger(name, handlers=handler, **kwargs)
 
 def get_csv_logger(name=None, dirname="logs", filename=None, handler=None, mode="w", fmt=None,
                    delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", csv_header=None, header=None, **kwargs):
@@ -49,4 +49,4 @@ def get_csv_logger(name=None, dirname="logs", filename=None, handler=None, mode=
                                                 header=csv_header + header, delimiter=delimiter, mode=mode)
     handler.setFormatter(DelimitedFormatter(fmt=fmt, datefmt=datefmt, delimiter=delimiter))
 
-    return get_logger(name, handlers=handler, **kwargs)
+    return get_base_logger(name, handlers=handler, **kwargs)

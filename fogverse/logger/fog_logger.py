@@ -1,7 +1,7 @@
 import logging
 
-from fogverse.constants import FOGV_CSV, FOGV_FILE, FOGV_STDOUT
-from utils.logger import get_csv_logger, get_file_logger, get_base_logger
+from ..constants import FOGV_CSV, FOGV_FILE, FOGV_STDOUT
+from ..utils.logger import get_csv_logger, get_file_logger, get_base_logger
 
 # Register custom log levels with logging.
 logging.addLevelName(FOGV_STDOUT, "FOGV_STDOUT")
@@ -20,6 +20,7 @@ class FogLogger:
         csv_log_kwargs={},
         file_log_kwargs={}
     ):
+        super().__init__()
 
         std_log_kwargs, csv_log_kwargs, file_log_kwargs = std_log_kwargs, csv_log_kwargs, file_log_kwargs
 

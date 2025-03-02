@@ -1,14 +1,14 @@
 import cv2
 
+from fogverse.utils.data import bytes_to_numpy
 from typing import Any
-from consumer.storage import ConsumerStorage
 from pickle import UnpicklingError
-from utils.data import bytes_to_numpy
 
 class BaseConsumer:
     """Base consumer class with message decoding logic."""
 
     def __init__(self):
+        super().__init__()
         self.auto_decode: bool = False
 
     async def start_consumer(self) -> None:
@@ -29,6 +29,8 @@ class BaseConsumer:
             return data
 
         # Handle ConsumerStorage message format.
+        from .storage import ConsumerStorage
+
         if isinstance(self.consumer, ConsumerStorage):
             self.message = data["message"]
             payload = data["data"]

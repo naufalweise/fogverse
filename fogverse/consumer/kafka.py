@@ -3,15 +3,17 @@ import asyncio
 import socket
 import uuid
 
-from base import BaseConsumer
-from fogverse.runnable import Runnable
-from logger import FogLogger
-from utils.data import get_config
+from ..runnable import Runnable
+from ..utils.data import get_config
+from .base import BaseConsumer
+from fogverse.logger import FogLogger
 
 class KafkaConsumer(BaseConsumer, Runnable):
     """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
 
     async def __init__(self, loop=asyncio.get_event_loop(), read_last=False):
+        super().__init__()
+
         self._loop = loop
 
         # Create consumer ID
@@ -50,7 +52,7 @@ class KafkaConsumer(BaseConsumer, Runnable):
     async def start_consumer(self):
         """ Starts the Kafka consumer and subscribes to topics. """
 
-        self._log_message(f"KAFKA CONSUMER START - TOPIC: {self._consumer_topic}, CONFIG: {self.consumer_conf}")
+        self._log.std_log(f"KAFKA CONSUMER START - TOPIC: {self._consumer_topic}, CONFIG: {self.consumer_conf}")
         await self.consumer.start()
 
         # Give some time to assign partitions.
@@ -65,4 +67,4 @@ class KafkaConsumer(BaseConsumer, Runnable):
         """Gracefully stops the Kafka consumer."""
 
         await self.consumer.stop()
-        self._log_message("Consumer has closed.")
+        self._log.std_log("Consumer has closed.")

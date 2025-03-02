@@ -1,3 +1,3 @@
-from manager import FogManager
+from .fog_manager import FogManager
 
 __all__ = ["FogManager"]

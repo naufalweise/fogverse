@@ -1,0 +1,2 @@
+[2025-03-02 10:31:15,345][FOGV_FILE][file_91959d8c-8d2b-47b0-b7ed-be65ae90d0b9] KAFKA PRODUCER START - TOPIC: output-topic, CONFIG: {'loop': <ProactorEventLoop running=False closed=False debug=False>, 'bootstrap_servers': 'localhost:9092', 'client_id': '91959d8c-8d2b-47b0-b7ed-be65ae90d0b9'}
+[2025-03-02 10:31:15,347][FOGV_FILE][file_91959d8c-8d2b-47b0-b7ed-be65ae90d0b9] Producer has closed.
