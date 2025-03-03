@@ -11,23 +11,23 @@ from fogverse.utils.data import get_config
 class KafkaProducer(BaseProducer, BaseConsumer, Runnable):
     """Kafka producer using aiokafka with configurable settings."""
 
-    def __init__(self):
+    def __init__(self, client_id=str(uuid.uuid4()), producer_topic=[], producer_server="localhost", producer_conf={}):
         super().__init__()
 
         # Create consumer ID
-        client_id = get_config("CLIENT_ID", default=str(uuid.uuid4()))
+        self.client_id = get_config("CLIENT_ID", default=client_id)
 
         # Create a logger instance.
         self._log = FogLogger(name=client_id)
 
         # Explicit list of topics to produce to.
-        self.producer_topic = get_config("PRODUCER_TOPIC", default=[])
+        self.producer_topic = get_config("PRODUCER_TOPIC", default=producer_topic)
 
         # Kafka producer configuration.
         self.producer_conf = {
-            "bootstrap_servers": get_config("PRODUCER_SERVERS", default="localhost"),
-            "client_id": client_id,
-            **getattr(self, "producer_conf", {}),
+            "bootstrap_servers": get_config("PRODUCER_SERVERS", default=producer_server),
+            "client_id": self.client_id,
+            **getattr(self, "producer_conf", producer_conf),
         }
 
         # Initialize the Kafka producer.

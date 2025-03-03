@@ -1,51 +1,39 @@
 import json
-import os
-import socket
-import uuid
+import time
 
-from aiokafka import ConsumerRecord, AIOKafkaProducer
+from aiokafka import ConsumerRecord
 from fogverse.logger import FogLogger
+from fogverse.producer.kafka import KafkaProducer
 from fogverse.profiler.abstract import AbstractProfiler
 from fogverse.utils.data import get_header, get_mem_size
 from fogverse.utils.time import calc_datetime, get_timestamp, format_timestamp
 
 class FogProfiler(AbstractProfiler):
-    """Profiles execution times, data sizes, and logs statistics locally or remotely."""
-
     DEFAULT_HEADERS = [
         "topic from", "topic to", "frame", "offset received",
         "frame delay (ms)", "msg creation delay (ms)",
-        "consume time (ms)", "size data received (KB)",
-        "decode time (ms)", "size data decoded (KB)",
-        "process time (ms)", "size data processed (KB)",
-        "encode time (ms)", "size data encoded (KB)",
-        "send time (ms)", "size data sent (KB)", "offset sent"
+        "consume time (ms)", "data size consumed (KB)",
+        "decode time (ms)", "data size decoded (KB)",
+        "process time (ms)", "data size processed (KB)",
+        "encode time (ms)", "data size encoded (KB)",
+        "send time (ms)", "data size sent (KB)", "offset sent",
     ]
 
-    def __init__(self, name=str(uuid.uuid4()), dirname=None, remote_logging=False):
+    def __init__(self, name=f"profiling_{time.time()}", dirname="profiling", log_to_kafka=False, kafka_topic="fogverse-profiling", kafka_servers="localhost"):
         super().__init__()
-
-        self._log_data = {}
         self.name = name
-        self._df_header = self.DEFAULT_HEADERS
-        self._log = FogLogger(self.name, dirname, self._df_header)
-        if remote_logging:
-            self._setup_remote_logging(self.name)
 
-    def _setup_remote_logging(self, remote_logging_name):
-        """Initialize remote logging configurations."""
+        self.log_data = {}
+        self._logger = FogLogger(self.name, dirname, self.DEFAULT_HEADERS)
 
-        self._remote_logging_name = remote_logging_name or self._profiling_name
-        self._logging_topic = os.getenv("LOGGING_TOPIC", "fogverse-profiling")
-        self._logging_producer_servers = os.getenv("LOGGING_PRODUCER_SERVERS") or os.getenv("PRODUCER_SERVERS")
+        if log_to_kafka:
+            self.kafka_topic = kafka_topic
+            self.kafka_servers = kafka_servers
 
-        if not self._logging_producer_servers:
-            raise ValueError("Remote logging requires a Kafka server. Set LOGGING_PRODUCER_SERVERS or PRODUCER_SERVERS.")
-
-        self._logging_producer = AIOKafkaProducer(
-            bootstrap_servers=self._logging_producer_servers,
-            client_id=os.getenv("CLIENT_ID", socket.gethostname())
-        )
+            self._logging_producer = KafkaProducer(
+                client_id=self.name,
+                producer_server=self.kafka_servers
+            )
 
     async def start_producer(self):
         """Start Kafka producer for logging."""
@@ -69,7 +57,7 @@ class FogProfiler(AbstractProfiler):
     def _after_receive(self, data):
         """Log data size and time taken for consumption."""
         self._log_data["consume time (ms)"] = calc_datetime(self._start_time)
-        self._log_data["size data received (KB)"] = get_mem_size(data.get("data", data) if isinstance(data, dict) else data)
+        self._log_data["data size consumed (KB)"] = get_mem_size(data.get("data", data) if isinstance(data, dict) else data)
 
     def _before_decode(self, _):
         self._before_decode_time = get_timestamp()
@@ -77,7 +65,7 @@ class FogProfiler(AbstractProfiler):
     def _after_decode(self, data):
         """Log decoding time and message metadata."""
         self._log_data["decode time (ms)"] = calc_datetime(self._before_decode_time)
-        self._log_data["size data decoded (KB)"] = get_mem_size(data)
+        self._log_data["data size decoded (KB)"] = get_mem_size(data)
 
         if isinstance(self.message, ConsumerRecord):
             now = get_timestamp()
@@ -101,7 +89,7 @@ class FogProfiler(AbstractProfiler):
     def _after_process(self, result):
         self._log_data.update({
             "process time (ms)": calc_datetime(self._before_process_time),
-            "size data processed (KB)": get_mem_size(result)
+            "data size processed (KB)": get_mem_size(result)
         })
 
     def _before_encode(self, _):
@@ -110,12 +98,12 @@ class FogProfiler(AbstractProfiler):
     def _after_encode(self, data):
         self._log_data.update({
             "encode time (ms)": calc_datetime(self._before_encode_time),
-            "size data encoded (KB)": get_mem_size(data)
+            "data size encoded (KB)": get_mem_size(data)
         })
 
     def _before_send(self, data):
         """Log data size before sending."""
-        self._log_data["size data sent (KB)"] = get_mem_size(data)
+        self._log_data["data size sent (KB)"] = get_mem_size(data)
         self._datetime_before_send = get_timestamp()
 
     async def _send_logging_data(self, headers, data):
@@ -158,7 +146,7 @@ class FogProfiler(AbstractProfiler):
         """Prepare final log data."""
 
         # Use provided log data or fallback to the instance's stored log data.
-        log_records = log_records or self._log_data
+        log_records = log_records or self.log_records
 
         # Return a header row and a list of corresponding values.
         return self._df_header, [log_records.get(header, missing_value) for header in self._df_header]

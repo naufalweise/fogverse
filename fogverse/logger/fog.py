@@ -12,7 +12,7 @@ logging.addLevelName(FOGV_CSV, "FOGV_CSV")
 class FogLogger:
     """Centralized logging for FogVerse, supporting standard, txt, and csv logs."""
 
-    def __init__(self, name=time.time(), dirname="logs", csv_header=[], std_log_kwargs={}, txt_log_kwargs={}, csv_log_kwargs={}):
+    def __init__(self, name=None, dirname="logs", csv_header=[], std_log_kwargs={}, txt_log_kwargs={}, csv_log_kwargs={}):
         super().__init__()
 
         self._std_log = get_base_logger(name, **std_log_kwargs)

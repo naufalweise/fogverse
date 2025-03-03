@@ -1,3 +1,4 @@
+import time
 from fogverse.constants import DEFAULT_FMT, FOGV_STDOUT, FOGV_TXT, FOGV_CSV
 from fogverse.logger.formatter import DelimitedFormatter
 from fogverse.logger.rotator import LogFileRotator
@@ -30,11 +31,11 @@ def get_base_logger(name=None, level=FOGV_STDOUT, handlers=None, formatter=None)
 
     return logger  # Return the configured logger.
 
-def get_txt_logger(name=None, dirname="logs", filename=None, mode="w", **kwargs):
+def get_txt_logger(name=None, dirname="logs", mode="w", **kwargs):
     """Create a txt-based logger that writes logs to a persistent file."""
 
     # Determine the full file path where logs will be stored.
-    filename = Path(dirname) / (filename or f"log_{name}.txt")
+    filename = Path(dirname) / (name or f"log_{time.time()}.txt")
 
     # Ensure the directory exists before writing logs.
     filename.parent.mkdir(parents=True, exist_ok=True)
@@ -48,14 +49,14 @@ def get_txt_logger(name=None, dirname="logs", filename=None, mode="w", **kwargs)
     # Create and return a logger using the base logger function, with the file handler attached.
     return get_base_logger(name, level=FOGV_TXT, handlers=handler, **kwargs)
 
-def get_csv_logger(name=None, dirname="logs", filename=None, mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", header=[], **kwargs):
+def get_csv_logger(name=None, dirname="logs", mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", header=[], **kwargs):
     """Create a CSV-based logger that writes logs to a persistent file."""
 
     # Define the log message format using the specified delimiter.
     fmt = f"%(asctime)s.%(msecs)03d{delimiter}%(name)s{delimiter}%(message)s"
 
     # Determine the full file path where logs will be stored.
-    filename = Path(dirname) / (filename or f"log_{name}.csv")
+    filename = Path(dirname) / (name or f"log_{time.time()}.csv")
 
     # Ensure the directory exists before writing logs.
     filename.parent.mkdir(parents=True, exist_ok=True)

@@ -12,26 +12,26 @@ from fogverse.utils.data import get_config
 class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
     """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
 
-    def __init__(self, read_last=False):
+    def __init__(self, group_id=socket.gethostname(), client_id=str(uuid.uuid4()), consumer_topic=[], consumer_server="localhost", consumer_conf={}, read_last=False):
         super().__init__()
 
         # Create consumer ID
-        group_id = get_config("GROUP_ID", default=socket.gethostname())
-        client_id = get_config("CLIENT_ID", default=str(uuid.uuid4()))
+        group_id = get_config("GROUP_ID", default=group_id)
+        client_id = get_config("CLIENT_ID", default=client_id)
 
         # Create a logger instance.
         self._log = FogLogger(name=client_id)
         self.read_last = read_last
 
         # Explicit list of topics to consume from.
-        self._consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", default=[]))
+        self._consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", default=consumer_topic))
 
         # Kafka consumer configuration.
         self.consumer_conf = {
-            "bootstrap_servers": get_config("CONSUMER_SERVERS", default="localhost"),
+            "bootstrap_servers": get_config("CONSUMER_SERVERS", default=consumer_server),
             "group_id": group_id,
             "client_id": client_id,
-            **getattr(self, "consumer_conf", {}),
+            **getattr(self, "consumer_conf", consumer_conf),
         }
 
         # Initialize the Kafka consumer.
