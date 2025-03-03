@@ -7,7 +7,7 @@ import time
 from fogverse.consumer import KafkaConsumer
 from fogverse.producer import KafkaProducer
 from fogverse.runnable import Runnable
-from fogverse.profiling import Profiling
+from fogverse.profiler import Profiling
 from fogverse.utils.data import bytes_to_numpy, numpy_to_bytes, get_header
 
 class FrameProcessor(KafkaConsumer, KafkaProducer, Runnable):

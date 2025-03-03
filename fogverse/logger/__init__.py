@@ -1,3 +1,3 @@
-from .fog_logger import FogLogger
+from .fog import FogLogger
 
 __all__ = ["FogLogger"]

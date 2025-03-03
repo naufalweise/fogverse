@@ -18,12 +18,12 @@ class ConsumerStorage(BaseConsumer, BaseProducer, Runnable):
     def _before_receive(self):
         """Record the timestamp before receiving a message."""
 
-        self._start = get_timestamp()
+        self._start_time = get_timestamp()
 
     def _after_receive(self, _):
         """Calculate and store the time taken to consume the message."""
 
-        self._consume_time = calc_datetime(self._start)
+        self._consume_time = calc_datetime(self._start_time)
 
     def _get_send_extra(self, *args, **kwargs):
         """Attach consumption metadata to the message."""

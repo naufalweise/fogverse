@@ -4,7 +4,7 @@ import os
 import uuid
 from fogverse.consumer import KafkaConsumer
 from fogverse.runnable import Runnable
-from fogverse.profiling import Profiling
+from fogverse.profiler import Profiling
 from fogverse.utils.data import bytes_to_numpy, get_header
 
 class ResultConsumer(KafkaConsumer, Runnable):

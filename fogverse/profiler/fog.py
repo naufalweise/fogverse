@@ -1,46 +1,15 @@
-import asyncio
 import json
-import logging
 import os
-import secrets
 import socket
+import uuid
 
 from aiokafka import ConsumerRecord, AIOKafkaProducer
 from fogverse.logger import FogLogger
+from fogverse.profiler.abstract import AbstractProfiler
 from fogverse.utils.data import get_header, get_mem_size
 from fogverse.utils.time import calc_datetime, get_timestamp, format_timestamp
 
-class AbstractProfiling:
-    """Defines hook methods for profiling lifecycle events."""
-    def _before_start(self, *args, **kwargs): ...
-    def _after_start(self, *args, **kwargs): ...
-    def _before_receive(self, *args, **kwargs): ...
-    def _after_receive(self, *args, **kwargs): ...
-    def _before_decode(self, *args, **kwargs): ...
-    def _after_decode(self, *args, **kwargs): ...
-    def _before_process(self, *args, **kwargs): ...
-    def _after_process(self, *args, **kwargs): ...
-    def _before_encode(self, *args, **kwargs): ...
-    def _after_encode(self, *args, **kwargs): ...
-    def _before_send(self, *args, **kwargs): ...
-    def _after_send(self, *args, **kwargs): ...
-    def _before_close(self, *args, **kwargs): ...
-    def _after_close(self, *args, **kwargs): ...
-
-class BaseProfiling(AbstractProfiling):
-    """Base class for profiling execution times and data sizes."""
-    
-    def __init__(self, loop=None):
-        self._loop = loop or asyncio.get_event_loop()
-        self._log_data = {}
-
-    def finalize_data(self, data=None, default_value=None):
-        """Prepare final log data."""
-        data = data or self._log_data
-        return self._df_header, [data.get(header, default_value) for header in self._df_header]
-
-
-class Profiling(BaseProfiling):
+class FogProfiler(AbstractProfiler):
     """Profiles execution times, data sizes, and logs statistics locally or remotely."""
 
     DEFAULT_HEADERS = [
@@ -53,22 +22,19 @@ class Profiling(BaseProfiling):
         "send time (ms)", "size data sent (KB)", "offset sent"
     ]
 
-    def __init__(self, name=None, dirname=None, remote_logging=False,
-                 remote_logging_name=None, logger=None, app_id=None, loop=None):
-        super().__init__(loop)
-        self._unique_id = secrets.token_hex(3)
-        self.app_id = app_id or self._unique_id
-        self._profiling_name = name or f"{self.__class__.__name__}_{self._unique_id}"
-        self._df_header = self.DEFAULT_HEADERS
-        self._log = logger or FogLogger(self._profiling_name, dirname, self._df_header, logging.FOGV_CSV)
+    def __init__(self, name=str(uuid.uuid4()), dirname=None, remote_logging=False):
+        super().__init__()
 
-        # Set up remote logging if enabled.
-        self._logging_producer = None
+        self._log_data = {}
+        self.name = name
+        self._df_header = self.DEFAULT_HEADERS
+        self._log = FogLogger(self.name, dirname, self._df_header)
         if remote_logging:
-            self._setup_remote_logging(remote_logging_name)
+            self._setup_remote_logging(self.name)
 
     def _setup_remote_logging(self, remote_logging_name):
         """Initialize remote logging configurations."""
+
         self._remote_logging_name = remote_logging_name or self._profiling_name
         self._logging_topic = os.getenv("LOGGING_TOPIC", "fogverse-profiling")
         self._logging_producer_servers = os.getenv("LOGGING_PRODUCER_SERVERS") or os.getenv("PRODUCER_SERVERS")
@@ -77,7 +43,6 @@ class Profiling(BaseProfiling):
             raise ValueError("Remote logging requires a Kafka server. Set LOGGING_PRODUCER_SERVERS or PRODUCER_SERVERS.")
 
         self._logging_producer = AIOKafkaProducer(
-            loop=self._loop,
             bootstrap_servers=self._logging_producer_servers,
             client_id=os.getenv("CLIENT_ID", socket.gethostname())
         )
@@ -99,11 +64,11 @@ class Profiling(BaseProfiling):
     def _before_receive(self):
         """Prepare for receiving data."""
         self._log_data.clear()
-        self._start = get_timestamp()
+        self._start_time = get_timestamp()
 
     def _after_receive(self, data):
         """Log data size and time taken for consumption."""
-        self._log_data["consume time (ms)"] = calc_datetime(self._start)
+        self._log_data["consume time (ms)"] = calc_datetime(self._start_time)
         self._log_data["size data received (KB)"] = get_mem_size(data.get("data", data) if isinstance(data, dict) else data)
 
     def _before_decode(self, _):
@@ -118,7 +83,7 @@ class Profiling(BaseProfiling):
             now = get_timestamp()
             self._log_data.update({
                 "frame delay (ms)": calc_datetime(get_header(self.message.headers, "timestamp"), now),
-                "msg creation delay (ms)": calc_datetime(self.message.timestamp / 1e3),
+                "msg creation delay (ms)": calc_datetime(self.message.timestamp / 1_000),
                 "offset received": self.message.offset,
                 "topic from": self.message.topic
             })
@@ -188,3 +153,12 @@ class Profiling(BaseProfiling):
         headers, res_data = self.finalize_data()
         self._send_logging_data(headers, res_data)
         self._log.csv_log(res_data)
+
+    def finalize_data(self, log_records=None, missing_value=None):
+        """Prepare final log data."""
+
+        # Use provided log data or fallback to the instance's stored log data.
+        log_records = log_records or self._log_data
+
+        # Return a header row and a list of corresponding values.
+        return self._df_header, [log_records.get(header, missing_value) for header in self._df_header]

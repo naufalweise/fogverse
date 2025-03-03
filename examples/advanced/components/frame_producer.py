@@ -6,7 +6,7 @@ import uuid
 import time
 from fogverse.producer import KafkaProducer
 from fogverse.runnable import Runnable
-from fogverse.profiling import Profiling
+from fogverse.profiler import Profiling
 from fogverse.utils.data import numpy_to_bytes
 
 class FrameProducer(KafkaProducer, Runnable):
