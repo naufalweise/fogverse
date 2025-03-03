@@ -63,6 +63,11 @@ class Runnable:
             await self._close()
             await self._call_optional('_after_close')
 
+    async def stop(self):
+        await self._call_optional('_before_close')
+        await self._close()
+        await self._call_optional('_after_close')
+
     async def _process_message(self):
         """Process a single message through the complete pipeline."""
 

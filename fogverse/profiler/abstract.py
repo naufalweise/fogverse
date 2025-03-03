@@ -4,16 +4,6 @@ class AbstractProfiler(ABC):
     """Abstract base class for reliable profiling."""
 
     @abstractmethod
-    def _before_start(self, *args, **kwargs):
-        """Hook to execute before the start of a process."""
-        pass
-
-    @abstractmethod
-    def _after_start(self, *args, **kwargs):
-        """Hook to execute after the process has started."""
-        pass
-
-    @abstractmethod
     def _before_receive(self, *args, **kwargs):
         """Hook to execute before receiving data."""
         pass
@@ -61,14 +51,4 @@ class AbstractProfiler(ABC):
     @abstractmethod
     def _after_send(self, *args, **kwargs):
         """Hook to execute after data has been sent."""
-        pass
-
-    @abstractmethod
-    def _before_close(self, *args, **kwargs):
-        """Hook to execute before closing a process."""
-        pass
-
-    @abstractmethod
-    def _after_close(self, *args, **kwargs):
-        """Hook to execute after the process has closed."""
         pass
