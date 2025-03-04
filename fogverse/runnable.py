@@ -5,17 +5,16 @@ from typing import Any, Optional
 
 class Runnable:
     """
-    Base class for an asynchronous processing pipeline.
-
-    This class handles consuming, processing, encoding, and sending messages
+    This class acts as a pipeline for receiving, decoding, processing, encoding, and sending messages
     while providing hooks for optional lifecycle methods.
     """
 
     def __init__(self):
         super().__init__()
+        self.message: Optional[Any] = None
+
         self._started = False
         self._closed = False
-        self.message: Optional[Any] = None
 
     def on_error(self, exception: Exception) -> None:
         """Handles exceptions by printing the traceback."""

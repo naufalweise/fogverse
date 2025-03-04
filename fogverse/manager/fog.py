@@ -3,6 +3,7 @@ import json
 import os
 import socket
 import sys
+import time
 import traceback
 import uuid
 
@@ -23,41 +24,13 @@ _default_topic_config = {
 class FogManager:
     """Handles communication with Kafka and manages components in a distributed system."""
 
-    def __init__(
-        self,
-        app_id=os.getenv("APP_ID") or str(uuid.uuid4()),
-        components=[],
-        to_deploy={},
-        loop=asyncio.get_event_loop(),
-        kafka_servers="localhost",
-        topic_name="fogverse-commands",
-        topic_config=_default_topic_config,
-        partition_num=DEFAULT_NUM_PARTITIONS,
-        log_dir="logs",
-    ):
-        # Ensures uniqueness across different instances of the application.
-        self.app_id = app_id
+    def __init__(self, name=None, log_dir="logs", components=[], to_deploy={}, kafka_servers="localhost", topic_name="fogverse-commands", topic_config=_default_topic_config, partition_num=DEFAULT_NUM_PARTITIONS):
+        self.name = name or f"Manager_{time.time()}"
 
-        # Uniquely identifies this instance of the Manager.
-        # Helps differentiate logs and messages when multiple managers exist.
-        self.manager_id = f"Manager_{self.app_id}"
-
-        # Ensures all async tasks (e.g., messaging, component execution) run in a single event loop.  
-        # Using a shared loop prevents race conditions.  
-        self.loop = loop
-
-        # Each component is expected to be an object with its own execution logic,  
-        # typically an asynchronous service that needs to be started and monitored.
         self.components = components
-
-        # Handles structured logging and tracks Manager activity.
-        self.logger = FogLogger(self.manager_id, level=FOGV_FILE, dirname=log_dir)
-
-        # Determines which Kafka servers to connect to.
-        self.manager_kafka_servers = (os.getenv("KAFKA_SERVERS") or kafka_servers)
-
-        # Handles general Kafka administrative operations.
-        self.admin = AdminClient({"bootstrap.servers": self.manager_kafka_servers})
+        self.logger = FogLogger(self.name, dirname=log_dir)
+        self.kafka_servers = kafka_servers
+        self.admin = AdminClient({"bootstrap.servers": self.kafka_servers})
 
         self.topic_name = topic_name
         self.topic_config = topic_config
@@ -69,7 +42,7 @@ class FogManager:
         self.kafka_config = {
             "loop": self.loop,
             "client_id": socket.gethostname(),
-            "bootstrap_servers": self.manager_kafka_servers,
+            "bootstrap_servers": self.kafka_servers,
         }
         self.logger.std_log("INITIATING MANAGER: %s", self.kafka_config)
 
@@ -97,7 +70,7 @@ class FogManager:
         topic_data = read_topic_yaml(yaml_path, env_var_resolver={}) if yaml_path.is_file() else {}
 
         # Ensure the manager's topic is included.
-        topics = topic_data.setdefault(self.manager_kafka_servers, {"admin": self.admin, "topics": []})["topics"]
+        topics = topic_data.setdefault(self.kafka_servers, {"admin": self.admin, "topics": []})["topics"]
         topics.append((self.topic_name, self.partition_num, self.topic_config))
 
         # Create or update topics.
