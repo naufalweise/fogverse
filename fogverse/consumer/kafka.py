@@ -3,13 +3,11 @@ import asyncio
 import socket
 import uuid
 
-from fogverse.consumer.base import BaseConsumer
 from fogverse.logger import FogLogger
-from fogverse.producer.base import BaseProducer
 from fogverse.runnable import Runnable
 from fogverse.utils.data import get_config
 
-class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
+class KafkaConsumer(Runnable):
     """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
 
     def __init__(self, group_id=socket.gethostname(), client_id=str(uuid.uuid4()), consumer_topic=[], consumer_server="localhost", consumer_conf={}, read_last=False):
