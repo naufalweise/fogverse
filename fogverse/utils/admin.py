@@ -7,7 +7,11 @@ import os
 import yaml
 
 def configure_topics(filepath: str, create=False):
-    """Load Kafka topics and cluster settings from a YAML file and optionally create topics."""
+    """
+    Retrieves Kafka topics and cluster configurations from a YAML file,
+    substituting any environment variables on the fly,
+    and optionally creating topics when needed.
+    """
 
     with Path(filepath).open() as f:
         config = yaml.safe_load(f) or {}

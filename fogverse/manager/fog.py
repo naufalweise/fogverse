@@ -1,109 +1,77 @@
 import asyncio
 import json
-import os
 import socket
 import sys
 import time
 import traceback
-import uuid
 
-from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from confluent_kafka.admin import AdminClient
 from fogverse.constants import *
 from fogverse.logger import FogLogger
-from fogverse.utils.admin import setup_topics, read_topic_yaml
-from pathlib import Path
-
-# Default Kafka topic configuration settings.
-_default_topic_config = {
-    "retention.ms": 32768,  # Message retention duration.
-    "segment.bytes": 1048576,  # Maximum segment size in bytes.
-    "segment.ms": 8192,  # Time for segment rotation.
-}
 
 class FogManager:
     """Handles communication with Kafka and manages components in a distributed system."""
 
-    def __init__(self, name=None, log_dir="logs", components=[], to_deploy={}, kafka_servers="localhost", topic_name="fogverse-commands", topic_config=_default_topic_config, partition_num=DEFAULT_NUM_PARTITIONS):
-        self.name = name or f"Manager_{time.time()}"
+    def __init__(self, name=f"Manager_{time.time()}", log_dir="logs", components=[], to_deploy={},
+                 kafka_server="localhost", topic_name="fogverse-commands",
+                 topic_config={
+                        "retention.ms": 32768,  # Message retention duration.
+                        "segment.bytes": 1048576,  # Maximum segment size in bytes.
+                        "segment.ms": 8192,  # Time for segment rotation.
+                    },
+                 num_partitions=DEFAULT_NUM_PARTITIONS):
+        super().__init__()
 
+        self.name = name
         self.components = components
+        self.to_deploy = to_deploy
+
         self.logger = FogLogger(self.name, dirname=log_dir)
-        self.kafka_servers = kafka_servers
-        self.admin = AdminClient({"bootstrap.servers": self.kafka_servers})
+        self.kafka_server = kafka_server
+        self.admin = AdminClient({"bootstrap.servers": kafka_server})
 
         self.topic_name = topic_name
         self.topic_config = topic_config
-        self.partition_num = partition_num
+        self.num_partitions = num_partitions
 
-        # Constructs a Kafka configuration dictionary for both producers and consumers.
-        # Integrates the shared event loop to coordinate async operations, sets the client ID as the host name for easy identification in Kafka logs,
-        # and specifies the Kafka broker addresses for connectivity and message routing.
         self.kafka_config = {
-            "loop": self.loop,
             "client_id": socket.gethostname(),
-            "bootstrap_servers": self.kafka_servers,
+            "bootstrap_servers": kafka_server,
         }
         self.logger.std_log("INITIATING MANAGER: %s", self.kafka_config)
 
         self.producer = AIOKafkaProducer(**self.kafka_config)
-        self.consumer = AIOKafkaConsumer(self.topic_name, **self.kafka_config)
+        self.consumer = AIOKafkaConsumer(topic_name, **self.kafka_config)
 
-        # Stores metadata for components that need to be deployed but haven"t started yet.
-        self.to_deploy = to_deploy
-
-        # Initializes an event that signals when components are ready.
+        # Event to signal readiness once deployments are complete.
         self.run_event = asyncio.Event()
 
-        # Immediately signal readiness if there are no pending deployments.
-        if not self.to_deploy:
-            self.run_event.set()
-
-    async def ensure_topics_exist(self):
-        """
-        Ensure Kafka topics exist by reading a yaml file, including the manager's topic,
-
-        and creating/updating topics.
-        """
-
-        yaml_path = Path("topic.yaml")
-        topic_data = read_topic_yaml(yaml_path, env_var_resolver={}) if yaml_path.is_file() else {}
-
-        # Ensure the manager's topic is included.
-        topics = topic_data.setdefault(self.kafka_servers, {"admin": self.admin, "topics": []})["topics"]
-        topics.append((self.topic_name, self.partition_num, self.topic_config))
-
-        # Create or update topics.
-        for data in topic_data.values():
-            setup_topics(data["admin"], data["topics"])
+        if not self.to_deploy: self.run_event.set()
 
     async def start(self):
-        """Start Kafka producer and consumer."""
-
         await self.consumer.start()
         await self.producer.start()
 
     async def stop(self):
-        """Stop Kafka producer and consumer."""
-
         await self.consumer.stop()
         await self.producer.stop()
 
     async def send_message(self, command, message, **kwargs):
         """Send a message to Kafka with a specific command."""
 
-        msg = json.dumps({"command": command, "from": self.manager_id, "message": message}).encode()
+        msg = json.dumps({"command": command, "from": self.name, "message": message}).encode()
         return await self.producer.send(self.topic_name, msg, **kwargs)
 
     async def notify_running_status(self):
         """Notify that the application is running."""
 
-        return await self.send_message(FOGV_STATUS_RUNNING, {"app_id": self.app_id})
+        return await self.send_message(FOGV_STATUS_RUNNING, {"name": self.name})
 
     async def deploy_pending_components(self):
         """Deploy components that haven't started by sending deployment requests."""
-        if self.run_event.is_set():
-            return
+
+        if self.run_event.is_set(): return
 
         while True:
             self.logger.std_log("Deploying pending components: %s", self.to_deploy)
@@ -114,11 +82,11 @@ class FogManager:
                     continue
 
                 if comp.get("status") is None:
-                    pending = True # Mark that at least one component is still pending.
+                    pending = True  # Mark that at least one component is still pending.
 
                 msg = {
+                    "name": comp["name"],
                     "image": comp["image"],
-                    "app_id": comp["app_id"],
                     "env": comp["env"],
                 }
                 asyncio.create_task(self.send_message(FOGV_CMD_REQUEST_DEPLOY, msg))
@@ -136,25 +104,25 @@ class FogManager:
         """Notify that the application is shutting down."""
 
         self.logger.std_log("Sending shutdown status")
-        return await self.send_message(FOGV_STATUS_SHUTDOWN, {"app_id": self.app_id})
+        return await self.send_message(FOGV_STATUS_SHUTDOWN, {"name": self.name})
 
     async def handle_shutdown(self, message):
         """Handle shutdown request from Kafka."""
 
-        if message["app_id"] == self.app_id:
+        if message["name"] == self.name:
             sys.exit(0)
 
     async def handle_running(self, message):
         """Update status of components when they start running."""
 
         for comp_data in self.to_deploy.values():
-            if comp_data["app_id"] == message["app_id"]:
+            if comp_data["name"] == message["name"]:
                 comp_data["status"] = FOGV_STATUS_RUNNING
 
     async def handle_message(self, command, message):
         """Generic message handler (can be extended)."""
 
-        self.logger.std_log("Handle general message: %s", message)
+        pass
 
     async def receive_message(self):
         """Continuously consume and process Kafka messages from the message queue."""
@@ -169,7 +137,7 @@ class FogManager:
                 command, message = data["command"], data["message"]  # Extract command and message.
 
                 # Ignore messages sent by this Manager instance itself to prevent loops.
-                if data["from"] == self.manager_id:
+                if data["from"] == self.name:
                     continue  
 
                 self.logger.std_log("Received message: %s", data)
@@ -236,7 +204,7 @@ class FogManager:
             tasks = [asyncio.ensure_future(self.receive_message()), 
                      asyncio.ensure_future(self.run_components())]
 
-            self.logger.std_log("Manager %s is running.", self.manager_id)
+            self.logger.std_log("Manager named %s is running.", self.name)
 
             # Attempt to request deployment for required components.
             await self.deploy_pending_components()
@@ -244,7 +212,7 @@ class FogManager:
             await asyncio.gather(*tasks)
 
         except Exception as e:
-            self.logger.std_log("Exception found while running Manager %s.", self.manager_id)
+            self.logger.std_log("Exception found while running Manager %s.", self.name)
             self.logger.std_log(traceback.format_exc())  # Log detailed error traceback.
 
             # Cancel all tasks on error to prevent dangling processes.

@@ -20,11 +20,11 @@ class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
         client_id = get_config("CLIENT_ID", default=client_id)
 
         # Create a logger instance.
-        self._log = FogLogger(name=client_id)
+        self.logger = FogLogger(name=client_id)
         self.read_last = read_last
 
         # Explicit list of topics to consume from.
-        self._consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", default=consumer_topic))
+        self.consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", default=consumer_topic))
 
         # Kafka consumer configuration.
         self.consumer_conf = {
@@ -36,7 +36,7 @@ class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
 
         # Initialize the Kafka consumer.
         self.consumer = aiokafka.AIOKafkaConsumer(
-            *self._consumer_topic,
+            *self.consumer_topic,
             **self.consumer_conf
         )
 
@@ -51,7 +51,7 @@ class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
     async def start_consumer(self):
         """Starts the Kafka consumer and subscribes to topics."""
 
-        self._log.std_log(f"KAFKA CONSUMER START - TOPIC: {self._consumer_topic}, CONFIG: {self.consumer_conf}")
+        self.logger.std_log(f"KAFKA CONSUMER START - TOPIC: {self.consumer_topic}, CONFIG: {self.consumer_conf}")
         await self.consumer.start()
 
         # Give some time to assign partitions.
@@ -67,4 +67,4 @@ class KafkaConsumer(BaseConsumer, BaseProducer, Runnable):
         """Gracefully stops the Kafka consumer."""
 
         await self.consumer.stop()
-        self._log.std_log("Consumer has closed.")
+        self.logger.std_log("Consumer has closed.")
