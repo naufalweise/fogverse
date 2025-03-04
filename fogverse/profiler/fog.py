@@ -5,7 +5,6 @@ from aiokafka import ConsumerRecord
 from fogverse.logger import FogLogger
 from fogverse.producer.kafka import KafkaProducer
 from fogverse.profiler.abstract import AbstractProfiler
-from fogverse.runnable import Runnable
 from fogverse.utils.data import get_header, get_mem_size
 from fogverse.utils.time import calc_datetime, format_timestamp, get_timestamp
 
@@ -22,18 +21,14 @@ class FogProfiler(AbstractProfiler):
         "send time (ms)", "data size sent (KB)", "offset sent",
     ]
 
-    def __init__(self, component: Runnable, name=f"profiling_{time.time()}", dirname="profiling", topic="fogverse-profiling"):
+    def __init__(self, name=f"profiling_{time.time()}", dirname="profiling", topic="fogverse-profiling"):
         super().__init__()
         self.name = name
 
         self.log_data = {}
-        self._logger = FogLogger(self.name, dirname, self.DEFAULT_HEADERS)
+        self.logger = FogLogger(self.name, dirname, self.DEFAULT_HEADERS)
 
-        self.component = component
         self.topic = topic  # This must not be None if `component` is a `KafkaProducer`.
-
-    def run(self): self.component.run()
-    def stop(self): self.component.stop()
 
     def _before_receive(self):
         """Clear log data and store the start time before receiving data."""
@@ -108,18 +103,20 @@ class FogProfiler(AbstractProfiler):
         if not self.log_data: return
 
         self.log_data["send time (ms)"] = calc_datetime(self._datetime_before_send)
-        _, log_data = self.finalize_data()
-        self._logger.csv_log(log_data)
+        headers, log_data = self.finalize_data()
+        self.logger.csv_log(log_data)
+
+        self.forward_profiling_data_to_kafka(headers, log_data)
 
     def finalize_data(self, log_data=None, default_value=None):
         """Format log data by aligning with headers and returning structured data."""
 
-        return self._df_header, [log_data.get(header, default_value) for header in self._df_header]
+        return self.DEFAULT_HEADERS, [log_data.get(header, default_value) for header in self.DEFAULT_HEADERS]
 
-    async def _send_kafka_profiling_data(self, headers, log_data):
+    async def forward_profiling_data_to_kafka(self, headers, log_data):
         """Send profiling data to Kafka for remote analysis."""
 
-        if not isinstance(self.component, KafkaProducer): return
+        if not isinstance(self, KafkaProducer): return
 
         send_data = json.dumps({
             "profiler": self.name,
@@ -127,5 +124,4 @@ class FogProfiler(AbstractProfiler):
             "log data": [format_timestamp(), *log_data],
             "extras": getattr(self, "extra_remote_data", {})
         }).encode()
-
-        await self.component.send(topic=self.topic, value=send_data)
+        await self.send(topic=self.topic, value=send_data)

@@ -11,7 +11,7 @@ import uuid
 def get_cam_id():
     """Generates a camera ID using an environment variable if available, otherwise creates a UUID."""
 
-    return f"cam_{os.getenv('CAM_ID', str(uuid.uuid4()))}"
+    return f"cam_{os.getenv("CAM_ID", str(uuid.uuid4()))}"
 
 def bytes_to_numpy(bbytes):
     """Converts byte data into a NumPy array."""
@@ -44,10 +44,10 @@ def get_mem_size(obj, seen=None):
     seen.add(obj_id)
 
     # Recursively calculate the size of object attributes.
-    if hasattr(obj, '__dict__'):
+    if hasattr(obj, "__dict__"):
         for cls in obj.__class__.__mro__:
-            if '__dict__' in cls.__dict__:
-                d = cls.__dict__['__dict__']
+            if "__dict__" in cls.__dict__:
+                d = cls.__dict__["__dict__"]
                 if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(d):
                     size += get_mem_size(obj.__dict__, seen)
                 break
@@ -58,14 +58,14 @@ def get_mem_size(obj, seen=None):
         size += sum(get_mem_size(k, seen) for k in obj.keys())
 
     # Calculate size of iterable elements.
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
         try:
             size += sum(get_mem_size(i, seen) for i in obj)
         except TypeError:
             pass
 
     # Calculate size of __slots__ attributes.
-    if hasattr(obj, '__slots__'):
+    if hasattr(obj, "__slots__"):
         size += sum(get_mem_size(getattr(obj, s), seen) for s in obj.__slots__ if hasattr(obj, s))
 
     return size / 1_000
@@ -73,8 +73,7 @@ def get_mem_size(obj, seen=None):
 def get_header(headers, key, default=None, decoder=None):
     """Retrieves a header value from a list of headers, with optional decoding."""
 
-    if not headers or key is None:
-        return default
+    if not headers or key is None: return default
 
     for header in headers:
         if header[0] == key:
@@ -101,5 +100,5 @@ def get_config(config_name: str, cls: object = None, default=None):
     if cls is None:
         return default
     
-    # Try to get the value from the class attribute, or return the default if it doesn't exist.
+    # Try to get the value from the class attribute, or return the default if it doesn"t exist.
     return getattr(cls, config_name.lower(), default)

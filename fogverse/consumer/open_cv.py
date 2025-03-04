@@ -3,17 +3,17 @@ import cv2
 
 from concurrent.futures import ThreadPoolExecutor
 from fogverse.consumer.storage import ConsumerStorage
-from fogverse.utils.data import get_config
 
 class ConsumerOpenCV(ConsumerStorage):
     """Video frame consumer using OpenCV. Reads from a camera or video device."""
 
-    def __init__(self, executor=ThreadPoolExecutor(max_workers=1)):
+    def __init__(self, device: int=0, executor=ThreadPoolExecutor(max_workers=1)):
         super().__init__()
 
-        self._device = get_config("DEVICE", default=0)
+        self.device = device
+        self.consumer = getattr(self, "consumer", None) or cv2.VideoCapture(self.device)
+
         self._executor = executor
-        self.consumer = getattr(self, "consumer", None) or cv2.VideoCapture(self._device)
 
     def close_consumer(self):
         """Releases the OpenCV video capture device."""

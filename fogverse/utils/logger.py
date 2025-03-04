@@ -1,10 +1,10 @@
-import time
 from fogverse.constants import DEFAULT_FMT, FOGV_STDOUT, FOGV_TXT, FOGV_CSV
 from fogverse.logger.formatter import DelimitedFormatter
 from fogverse.logger.rotator import LogFileRotator
 from pathlib import Path
 
 import logging
+import time
 
 def get_base_logger(name=None, level=FOGV_STDOUT, handlers=None, formatter=None):
     """Create and configure a logger that outputs messages to the console or specified handlers."""

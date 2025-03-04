@@ -1,11 +1,9 @@
 import asyncio
 
-from fogverse.consumer.base import BaseConsumer
-from fogverse.producer.base import BaseProducer
 from fogverse.runnable import Runnable
 from fogverse.utils.time import calc_datetime, get_timestamp
 
-class ConsumerStorage(BaseConsumer, BaseProducer, Runnable):
+class ConsumerStorage(Runnable):
     """A consumer that stores messages in an async queue with optional message retention."""
 
     def __init__(self, keep_messages=False):
