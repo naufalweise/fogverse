@@ -1,53 +1,51 @@
-# Advanced Fogverse Examples
+# Advanced FogVerse Deployment
 
-This directory demonstrates advanced Fogverse usage with multiple components managed by FogManager, deployment, and logging.
+A production-grade video analytics pipeline with profiling, management, and auto-scaling.
 
 ## Components
 
-- **Frame Producer**: Captures video frames and sends them to Kafka
-- **Frame Processor**: Processes frames (applies object detection)
-- **Result Consumer**: Consumes processed results
+1. **Smart Camera** - Captures and preprocesses video frames
+2. **AI Processor** - Runs object detection models
+3. **Results Analyzer** - Processes detection results
+4. **Central Manager** - Orchestrates deployment
+5. **Profiling Monitor** - Collects performance metrics
 
-## Manager Application
+## Features
 
-`manager_app.py` demonstrates the FogManager, which:
+- Real-time performance profiling
+- Dynamic component deployment
+- Kafka-based messaging
+- Docker containerization
+- Automated scaling decisions
 
-1. Sets up Kafka topics using the topic.yaml configuration
-2. Deploys and manages components
-3. Handles inter-component communication
-4. Monitors component status
+## Running
 
-## Deployment
+1. Start infrastructure:
 
-The setup demonstrates deploying components in a distributed environment:
+```bash
+docker-compose up -d --build
+```
 
-- Components can run locally or in containers
-- The FogManager coordinates component deployment
-- Component status is tracked and managed
+2. Deploy components:
 
-## Running the Example
+```bash
+python deploy.py
+```
 
-1. Start Kafka and Zookeeper:
+3. Monitor profiling:
 
-   ```bash
-   docker-compose up -d kafka zookeeper
-   ```
+```bash
+python monitor.py
+```
 
-2. Run the manager application:
+4. Scale workers:
 
-   ```bash
-   python manager_app.py
-   ```
+```bash
+python scale_workers.py
+```
 
-3. Alternatively, deploy the full stack:
-   ```bash
-   docker-compose up
-   ```
+5. Clean up:
 
-## Monitoring
-
-The example includes logging and profiling to monitor performance:
-
-- CSV logs track component performance
-- Kafka topics for log aggregation
-- Performance metrics collection
+```bash
+docker-compose down -v
+```

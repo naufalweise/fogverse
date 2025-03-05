@@ -3,10 +3,14 @@
 from io import BytesIO
 
 import inspect
+from dotenv import load_dotenv
 import numpy as np
 import os
 import sys
 import uuid
+
+# Load environment variables first.
+log = load_dotenv(".env")  # Add this line.
 
 def get_cam_id():
     """Generates a camera ID using an environment variable if available, otherwise creates a UUID."""
@@ -88,17 +92,17 @@ def get_header(headers, key, default=None, decoder=None):
 
 def get_config(config_name: str, cls: object = None, default=None):
     """Retrieves a configuration value from environment variables or a class attribute."""
-    
+
     # Try to get the value from environment variables.
     ret = os.getenv(config_name)
-    
+
     # If the environment variable exists, return it.
     if ret is not None:
         return ret
-    
+
     # If no class is provided, return the default value.
     if cls is None:
         return default
-    
+
     # Try to get the value from the class attribute, or return the default if it doesn"t exist.
     return getattr(cls, config_name.lower(), default)

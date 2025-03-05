@@ -1,0 +1,26 @@
+topic:
+  raw-frames:
+    server: $KAFKA_BOOTSTRAP_SERVERS
+    partitions: 6
+    config:
+      retention.ms: 3600000
+      cleanup.policy: compact
+
+  processed-frames:
+    server: $KAFKA_BOOTSTRAP_SERVERS
+    partitions: 6
+    config:
+      retention.ms: 7200000
+
+  analytics-data:
+    server: $KAFKA_BOOTSTRAP_SERVERS
+    partitions: 3
+
+  profiling-metrics:
+    server: $KAFKA_BOOTSTRAP_SERVERS
+    partitions: 3
+    config:
+      retention.ms: 86400000
+
+server:
+  main-cluster: $KAFKA_BOOTSTRAP_SERVERS

@@ -1,10 +1,15 @@
+from dataclasses import dataclass
 from confluent_kafka.admin import AdminClient, ConfigResource, NewPartitions, NewTopic
 from confluent_kafka.error import KafkaError
+from dotenv import load_dotenv
 from fogverse.constants import DEFAULT_NUM_PARTITIONS
 from pathlib import Path
 
 import os
 import yaml
+
+# Load environment variables first.
+log = load_dotenv(".env")  # Add this line.
 
 def configure_topics(filepath: str, create=False):
     """
@@ -19,19 +24,26 @@ def configure_topics(filepath: str, create=False):
     topic_config = resolve_env_variables(config.get("topic", {}))
     cluster_config = resolve_env_variables(config.get("server", {}))
 
-    admins = {cluster: AdminClient({"bootstrap.servers": host}) for cluster, host in cluster_config.items()}
-    cluster_topics = {cluster: {"admin": admins[cluster], "topics": []} for cluster in cluster_config}
+    cluster_topics = {
+        host: {"admin": AdminClient({"bootstrap.servers": host}), "topics": []} for host in cluster_config.values()
+    }
+
+    @dataclass
+    class TopicConfig:
+        name: str
+        num_partitions: int
+        config: dict
 
     for topic_name, attrs in topic_config.items():
         assigned_clusters = attrs.get("server", "localhost")
         num_partitions = attrs.get("partitions", DEFAULT_NUM_PARTITIONS)
-        topic_properties = attrs.get("config", {})
+        topic_extra_config = attrs.get("config", {})
 
         # Normalize `assigned_clusters` to a list.
         assigned_clusters = assigned_clusters if isinstance(assigned_clusters, list) else [assigned_clusters]
 
         for cluster in assigned_clusters:
-            cluster_topics[cluster]["topics"].append((topic_name, num_partitions, topic_properties))
+            cluster_topics[cluster]["topics"].append(TopicConfig(topic_name, num_partitions, topic_extra_config))
 
     if create:
         for cluster_info in cluster_topics.values():
@@ -39,25 +51,22 @@ def configure_topics(filepath: str, create=False):
 
     return cluster_topics
 
-def resolve_env_variables(mapping: dict):
+def resolve_env_variables(data):
     """
-    This function scans the dictionary for values that start with "$",
-    treats them as environment variable references, and replaces them
-    with their actual values from the system"s environment variables.
-    If an environment variable is not found, an assertion error is raised.
+    Recursively resolves environment variables in nested structures.
+    Handles dicts, lists, and primitive values.
     """
 
-    result = {}
-
-    for key, value in mapping.items():
-        if isinstance(value, str) and value.startswith("$"):  # Check if the value is an env variable.
-            env_var = value[1:]  # Remove the "$" prefix.
-            resolved = os.getenv(env_var)  # Retrieve the value from environment variables.
-            assert resolved is not None, f"Environment variable {env_var} not found."
-
-        result[key] = resolved
-
-    return result
+    if isinstance(data, dict):
+        return {k: resolve_env_variables(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [resolve_env_variables(item) for item in data]
+    elif isinstance(data, str) and data.startswith("$"):
+        env_var = data[1:]
+        value = os.getenv(env_var)
+        assert value is not None, f"Environment variable {env_var} not found."
+        return value
+    return data
 
 def setup_topics(admin, topics, alter_if_exist=True):
     """Create or update Kafka topics as needed."""
@@ -67,7 +76,7 @@ def setup_topics(admin, topics, alter_if_exist=True):
 
     # Ensure topics are NewTopic instances.
     topic_instances = [
-        topic if isinstance(topic, NewTopic) else NewTopic(*topic) 
+        topic if isinstance(topic, NewTopic) else NewTopic(topic.name, num_partitions=topic.num_partitions, config=topic.config) 
         for topic in topics
     ]
 
