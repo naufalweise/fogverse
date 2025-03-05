@@ -35,7 +35,7 @@ def get_txt_logger(name=None, dirname="logs", mode="w", **kwargs):
     """Create a txt-based logger that writes logs to a persistent file."""
 
     # Determine the full file path where logs will be stored.
-    filename = Path(dirname) / (name or f"log_{time.time()}.txt")
+    filename = Path(dirname) / (name or f"log_{int(time.time())}.txt")
 
     # Ensure the directory exists before writing logs.
     filename.parent.mkdir(parents=True, exist_ok=True)
@@ -49,14 +49,14 @@ def get_txt_logger(name=None, dirname="logs", mode="w", **kwargs):
     # Create and return a logger using the base logger function, with the file handler attached.
     return get_base_logger(name, level=FOGV_TXT, handlers=handler, **kwargs)
 
-def get_csv_logger(name=None, dirname="logs", mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", header=[], **kwargs):
+def get_csv_logger(name=None, dirname="logs", header=[], mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", **kwargs):
     """Create a CSV-based logger that writes logs to a persistent file."""
 
     # Define the log message format using the specified delimiter.
     fmt = f"%(asctime)s.%(msecs)03d{delimiter}%(name)s{delimiter}%(message)s"
 
     # Determine the full file path where logs will be stored.
-    filename = Path(dirname) / (name or f"log_{time.time()}.csv")
+    filename = Path(dirname) / (name or f"log_{int(time.time())}.csv")
 
     # Ensure the directory exists before writing logs.
     filename.parent.mkdir(parents=True, exist_ok=True)

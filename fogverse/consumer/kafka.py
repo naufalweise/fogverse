@@ -1,29 +1,28 @@
+import time
 import aiokafka
 import asyncio
 import socket
-import uuid
 
 from fogverse.logger import FogLogger
 from fogverse.runnable import Runnable
-from fogverse.utils.data import get_config
 
 class KafkaConsumer(Runnable):
-    """Kafka consumer using aiokafka with support for topic patterns and configurable settings."""
+    """Kafka consumer using aiokafka with configurable settings."""
 
-    def __init__(self, group_id=socket.gethostname(), client_id=str(uuid.uuid4()), consumer_topic=[], consumer_server="localhost", consumer_conf={}, read_last=False):
+    def __init__(self, group_id=socket.gethostname(), client_id=f"consumer_{int(time.time())}", consumer_topic=[], consumer_server="localhost", consumer_conf={}, read_last=False):
         super().__init__()
 
-        group_id = get_config("GROUP_ID", default=group_id)
-        client_id = get_config("CLIENT_ID", default=client_id)
+        self.group_id = group_id
+        self.client_id = client_id
 
         self.logger = FogLogger(name=client_id)
         self.read_last = read_last
 
-        self.consumer_topic = self._parse_topics(get_config("CONSUMER_TOPIC", default=consumer_topic))
+        self.consumer_topic = self._parse_topics(consumer_topic)
         self.consumer_conf = {
-            "bootstrap_servers": get_config("CONSUMER_SERVERS", default=consumer_server),
-            "group_id": group_id,
-            "client_id": client_id,
+            "bootstrap_servers": consumer_server,
+            "group_id": self.group_id,
+            "client_id": self.client_id,
             **getattr(self, "consumer_conf", consumer_conf),
         }
 
@@ -32,7 +31,8 @@ class KafkaConsumer(Runnable):
             **self.consumer_conf
         )
 
-        if read_last: self.seeking_end = asyncio.ensure_future(self.consumer.seek_to_end())
+        if read_last:
+            self.seeking_end = asyncio.ensure_future(self.consumer.seek_to_end())
 
     @staticmethod
     def _parse_topics(topic):
@@ -52,7 +52,8 @@ class KafkaConsumer(Runnable):
     async def receive(self):
         """Fetches a single message from Kafka."""
 
-        if self.read_last and asyncio.isfuture(self.seeking_end): await self.seeking_end
+        if self.read_last and asyncio.isfuture(self.seeking_end):
+            await self.seeking_end
         return await self.consumer.getone()
 
     async def close_consumer(self):

@@ -20,7 +20,7 @@ class FogLogger:
         self._csv_log = get_csv_logger(name, dirname, csv_header, **csv_log_kwargs)
 
     def _log(self, logger, message, *args, **kwargs):
-        logger._log(logger.level, message, *args, **kwargs)
+        logger._log(logger.level, message, args, **kwargs)
 
     def std_log(self, message, *args, **kwargs):
         self._log(self._std_log, message, *args, **kwargs)

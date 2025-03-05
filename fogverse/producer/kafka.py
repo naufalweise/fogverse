@@ -1,4 +1,4 @@
-import uuid
+import time
 import aiokafka
 import asyncio
 
@@ -8,7 +8,7 @@ from fogverse.runnable import Runnable
 class KafkaProducer(Runnable):
     """Kafka producer using aiokafka with configurable settings."""
 
-    def __init__(self, client_id=str(uuid.uuid4()), producer_topic=[], producer_server="localhost", producer_conf={}):
+    def __init__(self, client_id=f"producer_{int(time.time())}", producer_topic=[], producer_server="localhost", producer_conf={}):
         super().__init__()
 
         self.client_id = client_id

@@ -13,7 +13,7 @@ from fogverse.logger import FogLogger
 class FogManager:
     """Handles communication with Kafka and manages components in a distributed system."""
 
-    def __init__(self, name=f"Manager_{time.time()}", log_dir="logs", components=[], to_deploy={},
+    def __init__(self, name=f"Manager_{int(time.time())}", log_dir="logs", components=[], to_deploy={},
                  kafka_server="localhost", topic_name="fogverse-commands",
                  topic_config={
                         "retention.ms": 32768,  # Message retention duration.
