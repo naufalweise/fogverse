@@ -45,7 +45,7 @@ class Runnable:
         # This handles the ConsumerStorage message format.  
         from fogverse.consumer import ConsumerStorage
 
-        if isinstance(self, ConsumerStorage):
+        if isinstance(self.consumer, ConsumerStorage):
             self.message = data["message"]
             payload = data["data"]
             self._message_extra = payload.get("extra", {})

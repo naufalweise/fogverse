@@ -5,7 +5,7 @@ from fogverse.producer import KafkaProducer
 
 # Set variables for Kafka connections.
 kafka_server = "localhost:9092"
-kafka_topic = "pre-processed"
+kafka_topic = "counting"
 
 class MessageProducer(KafkaProducer):
     """Produces messages to a Kafka topic."""
@@ -33,7 +33,6 @@ class MessageConsumer(KafkaConsumer):
 
     def __init__(self):
         super().__init__(consumer_server=kafka_server, consumer_topic=kafka_topic)
-        self.producer_topic = "post-processed"
 
     def decode(self, data):
         """Convert bytes to string."""
@@ -52,9 +51,6 @@ class MessageConsumer(KafkaConsumer):
         """Convert processed string to bytes."""
 
         return data.encode()
-
-    async def send(self, _):
-        pass
     
 async def run_producer():
     """Run the producer."""
