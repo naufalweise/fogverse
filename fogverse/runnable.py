@@ -170,6 +170,7 @@ class Runnable:
         await self._call_optional("_before_send", bytes)
         await self.send(bytes)
         await self._call_optional("_after_send", bytes)
+        return sent
 
     async def _call_optional(self, method, *args):
         """

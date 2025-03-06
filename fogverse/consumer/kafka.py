@@ -9,7 +9,7 @@ from fogverse.runnable import Runnable
 class KafkaConsumer(Runnable):
     """Kafka consumer using aiokafka with configurable settings."""
 
-    def __init__(self, group_id=socket.gethostname(), client_id=f"consumer_{int(time.time())}", consumer_topic=[], consumer_server="localhost", consumer_conf={}, read_last=False):
+    def __init__(self, group_id=socket.gethostname(), client_id=f"consumer_{int(time.time())}", consumer_server="localhost", consumer_topic=[], consumer_conf={}, read_last=False):
         super().__init__()
 
         self.group_id = group_id

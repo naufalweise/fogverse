@@ -22,5 +22,12 @@ topic:
     config:
       retention.ms: 86400000
 
+  deployment-commands:
+    server: $KAFKA_BOOTSTRAP_SERVERS
+    partitions: 3
+    config:
+      retention.ms: 86400000 # 1 day
+      cleanup.policy: compact
+
 server:
   main-cluster: $KAFKA_BOOTSTRAP_SERVERS

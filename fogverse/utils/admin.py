@@ -1,15 +1,11 @@
 from dataclasses import dataclass
 from confluent_kafka.admin import AdminClient, ConfigResource, NewPartitions, NewTopic
 from confluent_kafka.error import KafkaError
-from dotenv import load_dotenv
 from fogverse.constants import DEFAULT_NUM_PARTITIONS
+from fogverse.utils.data import resolve_env_variables
 from pathlib import Path
 
-import os
 import yaml
-
-# Load environment variables first.
-log = load_dotenv(".env")  # Add this line.
 
 def configure_topics(filepath: str, create=False):
     """
@@ -18,22 +14,27 @@ def configure_topics(filepath: str, create=False):
     and optionally creating topics when needed.
     """
 
+    # Open and parse the YAML file.
     with Path(filepath).open() as f:
         config = yaml.safe_load(f) or {}
 
+    # Resolve environment variables in topic and server configurations.
     topic_config = resolve_env_variables(config.get("topic", {}))
     cluster_config = resolve_env_variables(config.get("server", {}))
 
+    # Initialize a dictionary to manage cluster connections and topic lists.
     cluster_topics = {
         host: {"admin": AdminClient({"bootstrap.servers": host}), "topics": []} for host in cluster_config.values()
     }
 
+    # This servers as a Data Transfer Object.
     @dataclass
     class TopicConfig:
         name: str
         num_partitions: int
         config: dict
 
+    # Extract and assign topics to their respective clusters.
     for topic_name, attrs in topic_config.items():
         assigned_clusters = attrs.get("server", "localhost")
         num_partitions = attrs.get("partitions", DEFAULT_NUM_PARTITIONS)
@@ -50,23 +51,6 @@ def configure_topics(filepath: str, create=False):
             setup_topics(cluster_info["admin"], cluster_info["topics"])
 
     return cluster_topics
-
-def resolve_env_variables(data):
-    """
-    Recursively resolves environment variables in nested structures.
-    Handles dicts, lists, and primitive values.
-    """
-
-    if isinstance(data, dict):
-        return {k: resolve_env_variables(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [resolve_env_variables(item) for item in data]
-    elif isinstance(data, str) and data.startswith("$"):
-        env_var = data[1:]
-        value = os.getenv(env_var)
-        assert value is not None, f"Environment variable {env_var} not found."
-        return value
-    return data
 
 def setup_topics(admin, topics, alter_if_exist=True):
     """Create or update Kafka topics as needed."""
@@ -112,7 +96,7 @@ def increase_partitions(topic_name, admin, num_partitions):
         exc = future.exception(4)  # Wait up to 4 secs for response.
         if exc:
             error_code = exc.args[0].code() if exc.args else None
-            if error_code == KafkaError.INVALID_PARTITIONS:
+            if error_code == KafkaError.INVALID_PARTITIONS:  # Topic already has more partitions or invalid `num_partitions`.
                 print(f"Invalid partition update for topic {topic_name}. Skipping.")
                 continue
             raise exc

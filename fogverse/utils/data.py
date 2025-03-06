@@ -1,9 +1,9 @@
 """Manages all data and configuration operations."""
 
+from dotenv import load_dotenv
 from io import BytesIO
 
 import inspect
-from dotenv import load_dotenv
 import numpy as np
 import os
 import sys
@@ -106,3 +106,20 @@ def get_config(config_name: str, cls: object = None, default=None):
 
     # Try to get the value from the class attribute, or return the default if it doesn"t exist.
     return getattr(cls, config_name.lower(), default)
+
+def resolve_env_variables(data):
+    """
+    Recursively resolves environment variables in nested structures.
+    Handles dicts, lists, and primitive values.
+    """
+
+    if isinstance(data, dict):
+        return {k: resolve_env_variables(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [resolve_env_variables(item) for item in data]
+    elif isinstance(data, str) and data.startswith("$"):
+        env_var = data[1:]  # Remove the leading `$`.
+        value = os.getenv(env_var)  # Get the environment variable value.
+        assert value is not None, f"Environment variable {env_var} not found."
+        return value
+    return data

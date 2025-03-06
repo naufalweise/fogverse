@@ -1,16 +1,17 @@
 import time
 import cv2
 import numpy as np
-from fogverse import Runnable, FogProfiler
-from fogverse.consumer import OpenCVConsumer
+from fogverse import runnable
+from fogverse.consumer import ConsumerOpenCV
 from fogverse.producer import KafkaProducer
+from fogverse.profiler import FogProfiler
 from fogverse.utils.data import get_config, numpy_to_bytes
 
-class SmartCamera(OpenCVConsumer, KafkaProducer, FogProfiler):
+class SmartCamera(ConsumerOpenCV, KafkaProducer, FogProfiler):
     def __init__(self):
         self._device = get_config('CAMERA_INDEX', cls=int, default=0)
         self.profiling_topic = get_config('PROFILING_TOPIC')
-        OpenCVConsumer.__init__(self, device=self._device)
+        ConsumerOpenCV.__init__(self, device=self._device)
         KafkaProducer.__init__(self)
         FogProfiler.__init__(self, topic=self.profiling_topic)
         self.frame_count = 0
