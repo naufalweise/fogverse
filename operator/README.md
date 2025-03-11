@@ -9,10 +9,14 @@ Cluster operator manages kafka cluster using kubernetes. It can create kafka clu
 ```
 minikube start --memory=4096 # 2GB default memory isn't always enough
 ```
+If using windows, run cmd as admin, then run this command
+```
+minikube start --memory=4096 --driver=hyperv
+```
 - Install strimzi (for managing kafka in kubernetes)
 ```
 kubectl create namespace kafka
-kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
+kubectl create -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
 ```
 Notes, use namespace kafka in kubernetes.
 - Install python dependencies, use virtual env
@@ -20,7 +24,12 @@ Notes, use namespace kafka in kubernetes.
 cd operator
 python -m venv .env-operator
 source .env-operator/bin/activate
-pip install -r requirements
+pip install -r requirements.txt
+```
+
+For windows replace source cmd with
+```
+.env-operator\Scripts\activate
 ```
 
 # Running
