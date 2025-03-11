@@ -73,6 +73,10 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
+  kafkaExporter:
+    groupRegex: ".*"
+    topicRegex: ".*"
+
 ---
 kind: ConfigMap
 apiVersion: v1
