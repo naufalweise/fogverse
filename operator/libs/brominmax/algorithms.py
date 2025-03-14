@@ -57,6 +57,7 @@ class ProblemInstance:
         c: int,
         r: int,
         B: int,
+        B_min = 0
     ):
         """Select the number of partitions/brokers with BroMin.
 
@@ -73,7 +74,7 @@ class ProblemInstance:
         assert r > 0
         assert B > 0
 
-        for b in range(r, B + 1, 1):
+        for b in range(max(r, B_min), B + 1, 1):
             for P in range(self.maxP(b, r), self.minP(c) - 1, -1):
                 if self.check_feasible(r, P, b):
                     return (P, b)
