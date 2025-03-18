@@ -50,6 +50,15 @@ This will create kubernetes deployment files for the brokers and topics configur
 kubectl apply -f out/deployments.yaml -n kafka
 ```
 
+- Wait for the cluster to be ready
+```
+kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n kafka 
+```
+The above command might timeout if you’re downloading images over a slow connection. If that happens you can always run it again.
+
+
+
+
 # Basic Usage
 
 ## Get External Bootstrap Server Address
