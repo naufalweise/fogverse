@@ -58,6 +58,10 @@ spec:
         port: 9093
         type: internal
         tls: true
+      - name: external2
+        port: 9094
+        type: loadbalancer
+        tls: false
       - name: external
         port: 30092  # Choose a fixed NodePort in the range 30000-32767
         type: nodeport
