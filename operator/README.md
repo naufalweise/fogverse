@@ -102,6 +102,17 @@ Import grafana dashboard.
 
 # Basic Usage
 
+## Get External Bootstrap Server Address
+Run as admin if using hyperv.
+
+```
+python scripts/get-bootstrap-server.py
+```
+You can use this address to access kafka from outside the cluster.
+
+## Run Fogverse
+See readme in examples/fogverse folder.
+
 ## Run kafka producer
 
 ```
