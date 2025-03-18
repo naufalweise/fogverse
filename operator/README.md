@@ -99,6 +99,14 @@ minikube service grafana -n monitoring
 For grafana: Default username password is admin / admin.
 Add prometheus as datasource with url: http://prometheus-operated:9090.
 Import grafana dashboard.
+- Wait for the cluster to be ready
+```
+kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n kafka 
+```
+The above command might timeout if you’re downloading images over a slow connection. If that happens you can always run it again.
+
+
+
 
 # Basic Usage
 
