@@ -9,6 +9,7 @@ setup(
         "confluent-kafka",
         "opencv-python",
         "numpy",
+        "kubernetes",
     ],
     python_requires=">=3.7",
 )
