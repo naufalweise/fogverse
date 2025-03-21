@@ -1,28 +1,29 @@
-import numpy as np
+from fogverse.producer.kafka import KafkaProducer
+from fogverse.utils.logging import FogLogger
+from fogverse.admin import create_topics
+
+
 import asyncio
+import os
 
-from fogverse import Producer
-from dotenv import load_dotenv
-
-load_dotenv()
-class MyProducer(Producer):
-    def __init__(self, loop=None):
-        self.producer_topic = 'my-topic-1'
-        Producer.__init__(self, loop=loop)
-
-    async def receive(self):
-        data = np.random.randint(100, size=(3, 3))
-        return data
+class MyProducer(KafkaProducer):
+    def __init__(self):
+        super().__init__(
+            topic="my-topic-1",
+            bootstrap_servers=os.getenv("BOOTSTRAP_SERVERS")
+        )
+        self.logger = FogLogger("MyProducer")
+        
+    async def produce(self, data: str):
+        await self.send(data.encode())
+        self.logger.info(f"Sent: {data}")
 
 async def main():
     producer = MyProducer()
-    tasks = [producer.run()]
+    await producer.start()
+    for i in range(10):
+        await producer.produce(f"Message {i}")
+    await producer.stop()
 
-    try:
-        await asyncio.gather(*tasks)
-    except:
-        for t in tasks:
-            t.close()
-
-if __name__ == '__main__':
-	asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

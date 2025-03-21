@@ -119,3 +119,10 @@ Delete cluster
 kubectl -n kafka delete $(kubectl get strimzi -o name -n kafka)
 kubectl delete pvc -l strimzi.io/name=my-cluster-kafka -n kafka
 ```
+
+
+Fix DNS Problem
+```
+kubectl set env deployment strimzi-cluster-operator KUBERNETES_SERVICE_DNS_DOMAIN=cluster.local -n kafka
+```
+Then wait for rolling update.
