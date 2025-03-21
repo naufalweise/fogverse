@@ -179,3 +179,9 @@ To get the cpu usage of brokers in percent, divide the cpu usage with the cpu li
 ```
 kubectl get pod <pod-name> -n kafka -o jsonpath="{.spec.containers[*].resources.limits.cpu}"
 ```
+
+Fix DNS Problem
+```
+kubectl set env deployment strimzi-cluster-operator KUBERNETES_SERVICE_DNS_DOMAIN=cluster.local -n kafka
+```
+Then wait for rolling update.
