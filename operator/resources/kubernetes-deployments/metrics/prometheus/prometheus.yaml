@@ -43,7 +43,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: prometheus-server
-    namespace: myproject
+    namespace: monitoring
 
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -63,3 +63,15 @@ spec:
     requests:
       memory: 400Mi
   enableAdminAPI: false
+  ruleSelector:
+    matchLabels:
+      role: alert-rules
+      app: strimzi
+  alerting:
+    alertmanagers:
+    - namespace: monitoring
+      name: alertmanager
+      port: alertmanager
+  additionalScrapeConfigs:
+    name: additional-scrape-configs
+    key: prometheus-additional.yaml

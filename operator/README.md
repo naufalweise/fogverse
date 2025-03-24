@@ -13,10 +13,12 @@ If using windows, run cmd as admin, then run this command
 ```
 minikube start --memory=4096 --driver=hyperv
 ```
-- Install strimzi (for managing kafka in kubernetes)
+- Install strimzi (for managing kafka in kubernetes) and prometheus
 ```
 kubectl create namespace kafka
 kubectl create -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
+kubectl create namespace monitoring
+kubectl -n monitoring create -f resources/kubernetes-deployments/prometheus-operator-deployment.yaml
 ```
 Notes, use namespace kafka in kubernetes.
 - Install python dependencies, use virtual env
@@ -47,7 +49,18 @@ This will create kubernetes deployment files for the brokers and topics configur
 - Deploy Cluster
 
 ```
+kubectl apply -f resources/kubernetes-deployments/metrics/kafka-monitoring-config.yaml -n kafka
 kubectl apply -f out/deployments.yaml -n kafka
+```
+
+- Deploy monitoring resources
+```
+
+kubectl -n monitoring apply -f metrics/prometheus/prometheus-additional.yaml
+kubectl -n monitoring apply -f metrics/prometheus/strimzi-pod-monitor.yaml
+kubectl -n monitoring apply -f metrics/prometheus/prometheus-rules.yaml
+kubectl -n monitoring apply -f metrics/prometheus/prometheus.yaml
+
 ```
 
 # Basic Usage

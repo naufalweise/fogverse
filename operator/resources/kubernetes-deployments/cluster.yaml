@@ -76,3 +76,9 @@ spec:
   kafkaExporter:
     groupRegex: ".*"
     topicRegex: ".*"
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
