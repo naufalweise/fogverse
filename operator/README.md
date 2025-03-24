@@ -35,6 +35,8 @@ minikube addons enable metrics-server
 ```
 kubectl create namespace kafka
 kubectl create -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
+kubectl create namespace monitoring
+kubectl -n monitoring create -f resources/kubernetes-deployments/prometheus-operator-deployment.yaml
 ```
 Notes, use namespace kafka in kubernetes.
 - Install python dependencies, use virtual env
@@ -107,6 +109,15 @@ The above command might timeout if you’re downloading images over a slow conne
 
 
 
+- Deploy monitoring resources
+```
+
+kubectl -n monitoring apply -f metrics/prometheus/prometheus-additional.yaml
+kubectl -n monitoring apply -f metrics/prometheus/strimzi-pod-monitor.yaml
+kubectl -n monitoring apply -f metrics/prometheus/prometheus-rules.yaml
+kubectl -n monitoring apply -f metrics/prometheus/prometheus.yaml
+
+```
 
 # Basic Usage
 
