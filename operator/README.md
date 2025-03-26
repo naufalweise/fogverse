@@ -112,12 +112,25 @@ The above command might timeout if you’re downloading images over a slow conne
 - Deploy monitoring resources
 ```
 
-kubectl -n monitoring apply -f metrics/prometheus/prometheus-additional.yaml
-kubectl -n monitoring apply -f metrics/prometheus/strimzi-pod-monitor.yaml
-kubectl -n monitoring apply -f metrics/prometheus/prometheus-rules.yaml
-kubectl -n monitoring apply -f metrics/prometheus/prometheus.yaml
+kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/prometheus/prometheus-additional.yaml
+kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/prometheus/strimzi-pod-monitor.yaml
+kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/prometheus/prometheus-rules.yaml
+kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/prometheus/prometheus.yaml
 
 ```
+- Install grafana if needed
+```
+kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/grafana-install/grafana.yaml
+
+```
+- Open grafana/prometheus when ready
+```
+minikube service prometheus-operated -n monitoring
+minikube service grafana -n monitoring
+```
+For grafana: Default username password is admin / admin.
+Add prometheus as datasource with url: http://prometheus-operated:9090.
+Import grafana dashboard.
 
 # Basic Usage
 
@@ -196,3 +209,13 @@ Fix DNS Problem
 kubectl set env deployment strimzi-cluster-operator KUBERNETES_SERVICE_DNS_DOMAIN=cluster.local -n kafka
 ```
 Then wait for rolling update.
+# Monitor CPU Usage
+```
+kubectl top po -n kafka
+
+```
+This tells the cpu usage of pods. 1000m cpu = 1vcpu.
+To get the cpu usage of brokers in percent, divide the cpu usage with the cpu limit. you can find the cpu limit in the deployment files or with this command:
+```
+kubectl get pod <pod-name> -n kafka -o jsonpath="{.spec.containers[*].resources.limits.cpu}"
+```
