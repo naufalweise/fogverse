@@ -36,6 +36,13 @@ spec:
         size: 100Gi
         kraftMetadata: shared
         deleteClaim: false
+  resources:
+      requests:
+        memory: 1Gi
+        cpu: "200m"
+      limits:
+        memory: 2Gi
+        cpu: "1"
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
