@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 
+from confluent_kafka.admin import AdminClient
 from kafka import KafkaAdminClient, KafkaProducer
 from kafka.errors import UnknownTopicOrPartitionError, NoBrokersAvailable
 
@@ -27,22 +28,7 @@ def get_cpu_perc(container_name):
 
 def benchmark_production_throughput_per_partition():
     container = "kafka-broker-1"
-    admin_client = KafkaAdminClient(bootstrap_servers="localhost:29091")
-    print("Kafka Admin Client created.")
-    try:
-        topics = admin_client.list_topics()
-        if "test-topic" in topics:
-            print("Deleting topic 'test-topic'...")
-            admin_client.delete_topics(["test-topic"])
-        else:
-            print("Topic 'test-topic' does not exist.")
-    except UnknownTopicOrPartitionError:
-        print("Topic does not exist.")
-    except Exception as e:
-        print(f"ERROR: {e}")
-    finally:
-        admin_client.close()
-
+    subprocess.run(["./setup_topic.sh"], check=True)
 
     # cpu_perc = get_cpu_perc(container)
 
@@ -96,8 +82,9 @@ if __name__ == "__main__":
 
         while True:
             try:
-                admin_client = KafkaAdminClient(bootstrap_servers="localhost:29091")
-                admin_client.close()
+                admin_client = AdminClient({
+                    "bootstrap.servers": "localhost:29091"
+                })
                 print("Kafka is ready!")
                 break
             except NoBrokersAvailable:
@@ -109,7 +96,7 @@ if __name__ == "__main__":
         print("ERROR:", e)
     finally:
         # Clean up Docker containers and volumes after testing.
-        subprocess.run(["docker", "compose", "down", "-v"], check=True)
+        # subprocess.run(["docker", "compose", "down", "-v"], check=True)
         print("Docker containers stopped and removed.")
 
 def produce_test_messages(topic, num_records=1000, record_size=100, bootstrap_servers="localhost:29091"):
