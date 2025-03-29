@@ -14,7 +14,6 @@ services:
         external_port = f"2909{node_id}"
         internal_port = f"909{2*node_id}"
         controller_port = f"909{2*node_id+1}"
-        jolokia_port = f"{9999 - i}"
 
         kafka_service = f"""  kafka-{node_id}:
     image: confluentinc/cp-kafka:latest
@@ -34,15 +33,12 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "{n}"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "{n}"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
-      KAFKA_OPTS: "-javaagent:/opt/jolokia/jolokia.jar=port={jolokia_port},host=0.0.0.0"
     ports:
       - "{internal_port}:{internal_port}"
       - "{external_port}:{external_port}"
       - "{controller_port}:{controller_port}"
-      - "{jolokia_port}:{jolokia_port}"
     volumes:
       - kafka_data_{node_id}:/var/lib/kafka/data
-      - ./jolokia.jar:/opt/jolokia/jolokia.jar
     mem_limit: 2g
     cpus: 2.0
 

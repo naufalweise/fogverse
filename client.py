@@ -4,15 +4,15 @@ import time
 TOPIC = "test_topic"
 
 def produce():
-    producer = KafkaProducer(bootstrap_servers="localhost:9092")
+    producer = KafkaProducer(bootstrap_servers="localhost:29092")
     while True:
         message = f"hello-{int(time.time())}"
         producer.send(TOPIC, message.encode("utf-8"))
         print(f"Produced: {message}")
-        # time.sleep(2)
+        time.sleep(2)
 
 def consume():
-    consumer = KafkaConsumer(TOPIC, bootstrap_servers="localhost:9092", auto_offset_reset="latest")
+    consumer = KafkaConsumer(TOPIC, bootstrap_servers="localhost:29092", auto_offset_reset="latest")
     for msg in consumer:
         print(f"Consumed: {msg.value.decode('utf-8')}")
 
