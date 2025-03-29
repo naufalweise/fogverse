@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  kafka-1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker-1
+    environment:
+      CLUSTER_ID: "test-cluster"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "controller,broker"
+      KAFKA_LISTENERS: "INTERNAL://:9092,EXTERNAL://:29091,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-broker-1:9092,EXTERNAL://localhost:29091"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_OPTS: "-javaagent:/opt/jolokia/jolokia.jar=port=9999,host=0.0.0.0"
+    ports:
+      - "9092:9092"
+      - "29091:29091"
+      - "9093:9093"
+      - "9999:9999"
+    volumes:
+      - kafka_data_1:/var/lib/kafka/data
+      - ./jolokia.jar:/opt/jolokia/jolokia.jar
+    mem_limit: 2g
+    cpus: 2.0
+
+  kafka-2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker-2
+    environment:
+      CLUSTER_ID: "test-cluster"
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: "controller,broker"
+      KAFKA_LISTENERS: "INTERNAL://:9094,EXTERNAL://:29092,CONTROLLER://:9095"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-broker-2:9094,EXTERNAL://localhost:29092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_OPTS: "-javaagent:/opt/jolokia/jolokia.jar=port=9998,host=0.0.0.0"
+    ports:
+      - "9094:9094"
+      - "29092:29092"
+      - "9095:9095"
+      - "9998:9998"
+    volumes:
+      - kafka_data_2:/var/lib/kafka/data
+      - ./jolokia.jar:/opt/jolokia/jolokia.jar
+    mem_limit: 2g
+    cpus: 2.0
+
+  kafka-3:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker-3
+    environment:
+      CLUSTER_ID: "test-cluster"
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: "controller,broker"
+      KAFKA_LISTENERS: "INTERNAL://:9096,EXTERNAL://:29093,CONTROLLER://:9097"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-broker-3:9096,EXTERNAL://localhost:29093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_OPTS: "-javaagent:/opt/jolokia/jolokia.jar=port=9997,host=0.0.0.0"
+    ports:
+      - "9096:9096"
+      - "29093:29093"
+      - "9097:9097"
+      - "9997:9997"
+    volumes:
+      - kafka_data_3:/var/lib/kafka/data
+      - ./jolokia.jar:/opt/jolokia/jolokia.jar
+    mem_limit: 2g
+    cpus: 2.0
+
+volumes:
+  kafka_data_1:
+  kafka_data_2:
+  kafka_data_3:
