@@ -80,6 +80,12 @@ kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/promethe
 kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/prometheus/prometheus.yaml
 
 ```
+- Open prometheus web ui
+```
+kubectl port-forward service/prometheus-operated 9090:9090 -n monitoring
+```
+Now open localhost:9090 with your browser. You should see the prometheus web ui.
+
 - Install grafana if needed
 ```
 kubectl -n monitoring apply -f resources/kubernetes-deployments/metrics/grafana-install/grafana.yaml
