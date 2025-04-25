@@ -219,3 +219,13 @@ To get the cpu usage of brokers in percent, divide the cpu usage with the cpu li
 ```
 kubectl get pod <pod-name> -n kafka -o jsonpath="{.spec.containers[*].resources.limits.cpu}"
 ```
+
+
+# Autoscaler
+
+Build
+
+```
+minikube docker-env
+docker build -t kafka-autoscaler-operator .
+```

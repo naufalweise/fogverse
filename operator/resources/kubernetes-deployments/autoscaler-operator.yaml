@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-autoscaler-sa
+  namespace: kafka
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kafka-autoscaler-role
+  namespace: kafka
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services"]
+    verbs: ["get", "list"]
+  - apiGroups: ["kafka.strimzi.io"]
+    resources: ["kafkas"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kafka-autoscaler-rb
+  namespace: kafka
+subjects:
+  - kind: ServiceAccount
+    name: kafka-autoscaler-sa
+roleRef:
+  kind: Role
+  name: kafka-autoscaler-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-autoscaler-operator
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-autoscaler
+  template:
+    metadata:
+      labels:
+        app: kafka-autoscaler
+    spec:
+      serviceAccountName: kafka-autoscaler-sa
+      containers:
+        - name: autoscaler
+          image: kafka-autoscaler-operator:latest
+          imagePullPolicy: Always
+          env:
+            - name: PROMETHEUS_URL
+              value: "http://prometheus.monitoring.svc.cluster.local:9090"
