@@ -1,6 +1,20 @@
 # Cluster Operator
 Cluster operator manages kafka cluster using kubernetes. It can create kafka cluster, including its brookers, and topic partitions according to bromin and bromax partitioning algorithms.
 
+
+# Quick Install and Running
+- cd operator
+- minikube start
+```
+minikube start --driver=hyperv --cpus=4
+```
+- Run 
+```
+scripts\windows\install.bat
+scripts\windows\install-monitoring.bat
+scripts\windows\deploy.bat
+```
+
 # Install
 
 - Install kubectl
