@@ -78,7 +78,7 @@ class Partitioner:
         """
         MAX_BROKERS_INCREASE = 5
 
-        assert c > 0
+        assert c >= 0
         assert b > 0
         r = self.r
         c = max(c, self.c)
