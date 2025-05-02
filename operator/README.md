@@ -10,9 +10,7 @@ minikube start --driver=hyperv --cpus=4
 ```
 - Run 
 ```
-scripts\windows\install.bat
-scripts\windows\install-monitoring.bat
-scripts\windows\deploy.bat
+scripts\windows\create-cluster.bat
 ```
 
 # Install
@@ -226,6 +224,12 @@ kubectl get pod <pod-name> -n kafka -o jsonpath="{.spec.containers[*].resources.
 Build
 
 ```
+cd autoscaler
 minikube docker-env
-docker build -t kafka-autoscaler-operator .
+docker build -t kafka-autoscaler-operator:latest .
+```
+
+Deploy
+```
+kubectl apply -f resources/kubernetes-deployments/autoscaler-operator.yaml
 ```
