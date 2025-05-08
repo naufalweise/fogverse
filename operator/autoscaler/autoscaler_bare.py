@@ -110,8 +110,8 @@ def calculate_average_cpu_usage(cpu_usages):
 
 def check_threshold():
     """Check the scaling parameters and determine if scaling is needed and which metrics caused it."""
-    #cpu_usage = get_kafka_brokers_cpu_usage()
-    cpu_usage = 100
+    cpu_usage = get_kafka_brokers_cpu_usage()
+    #cpu_usage = 100
     if cpu_usage > 80:
         return (True,  "cpu")
     idle_thread = get_request_handler_idle_ratio()
