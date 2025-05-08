@@ -93,3 +93,29 @@ spec:
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
+  cruiseControl:
+    autoRebalance:
+      - mode: add-brokers
+        template:
+          name: my-add-brokers-rebalancing-template
+      - mode: remove-brokers
+        template:
+          name: my-remove-brokers-rebalancing-template
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: my-add-brokers-rebalancing-template
+  annotations:
+    strimzi.io/rebalance-template: "true"
+# no goals specified, using the default goals from the Cruise Control configuration
+spec: {}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: my-remove-brokers-rebalancing-template
+  annotations:
+    strimzi.io/rebalance-template: "true"
+# no goals specified, using the default goals from the Cruise Control configuration
+spec: {}
