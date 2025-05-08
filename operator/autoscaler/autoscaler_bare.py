@@ -4,37 +4,35 @@ import os
 import argparse
 from algorithms import Partitioner
 from kubernetes import client, config
+import get_cpu
 
 partitioner = Partitioner()  # TODO: masukan config awal sebagai parameter
 
 # Static variables for KAFKA_NAMESPACE and Kafka resource name
 KAFKA_NAMESPACE = "kafka"  # Replace with your KAFKA_NAMESPACE
 KAFKA_CLUSTER_NAME = "my-cluster"  # Replace with your Kafka cluster name
-PROMETHEUS_URL = "http://prometheus-server:9090"  # Replace with your Prometheus server URL
+PROMETHEUS_URL = "http://localhost:9090"  # Replace with your Prometheus server URL
 
 def initialize_kubernetes():
     """Initialize Kubernetes configuration and return the API client."""
     config.load_kube_config()
     return client.CustomObjectsApi()
 
+TOPIC_NAME = "my-topic-1" 
 def patch_partitions(api_instance, partitions):
     """Patch the number of partitions for the Kafka cluster."""
     kafka_patch = {
         "spec": {
-            "kafka": {
-                "config": {
-                    "num.partitions": partitions
-                }
-            }
+            "partitions": partitions
         }
     }
     try:
         api_instance.patch_namespaced_custom_object(
             group="kafka.strimzi.io",
             version="v1beta2",
-            KAFKA_NAMESPACE=KAFKA_NAMESPACE,
-            plural="kafkas",
-            name=KAFKA_CLUSTER_NAME,
+            namespace=KAFKA_NAMESPACE,
+            plural="kafkatopics",
+            name=TOPIC_NAME,
             body=kafka_patch
         )
         print(f"Updated number of partitions to {partitions}")
@@ -43,21 +41,26 @@ def patch_partitions(api_instance, partitions):
 
 def scale_brokers(api_instance, brokers):
     """Scale the number of brokers for the Kafka cluster."""
-    broker_patch = {
-        "spec": {
-            "kafka": {
+    try:
+        # Define the group, version, and plural for the Kafka Nodepool
+        group = "kafka.strimzi.io"
+        version = "v1beta2"
+        plural = "kafkanodepools"
+
+        # Construct the body for the scale operation.
+        body = {
+            "spec": {
                 "replicas": brokers
             }
         }
-    }
-    try:
-        api_instance.patch_namespaced_custom_object(
-            group="kafka.strimzi.io",
-            version="v1beta2",
-            KAFKA_NAMESPACE=KAFKA_NAMESPACE,
-            plural="kafkas",
-            name=KAFKA_CLUSTER_NAME,
-            body=broker_patch
+        # Patch the Kafka Nodepool
+        api_response = api_instance.patch_namespaced_custom_object(
+            group=group,
+            version=version,
+            namespace=KAFKA_NAMESPACE,
+            plural=plural,
+            name="broker",
+            body=body,
         )
         print(f"Scaled brokers to {brokers}")
     except client.exceptions.ApiException as e:
@@ -85,9 +88,9 @@ def get_request_handler_idle_ratio():
 def get_kafka_brokers_cpu_usage():
     """Fetch the CPU usage of Kafka brokers from the Kubernetes metrics API."""
     try:
-        core_api = client.CoreV1Api()
-        pods = core_api.list_namespaced_pod(namespace=KAFKA_NAMESPACE, label_selector=f"strimzi.io/name={KAFKA_CLUSTER_NAME}-kafka")
-        cpu_usages = [get_pod_cpu_usage(pod) for pod in pods.items if is_kafka_broker(pod)]
+        pod_cpus = get_cpu.get_pod_average_cpu_percentage(KAFKA_NAMESPACE)
+
+        cpu_usages = [pod_data['average_cpu_percentage'] for pod_data in pod_cpus if is_kafka_broker(pod_data)]
         return calculate_average_cpu_usage(cpu_usages)
     except client.exceptions.ApiException as e:
         print(f"Error fetching CPU usage from Kubernetes metrics API: {e}")
@@ -95,28 +98,8 @@ def get_kafka_brokers_cpu_usage():
 
 def is_kafka_broker(pod):
     """Check if the pod is a Kafka broker."""
-    return "broker" in pod.metadata.name
+    return "broker" in pod['pod_name']  
 
-def get_pod_cpu_usage(pod):
-    """Fetch the CPU usage of a specific pod."""
-    metrics_api = client.CustomObjectsApi()
-    metrics = metrics_api.get_namespaced_custom_object(
-        group="metrics.k8s.io",
-        version="v1beta1",
-        namespace=KAFKA_NAMESPACE,
-        plural="pods",
-        name=pod.metadata.name
-    )
-    for container in metrics["containers"]:
-        if container["name"] == "kafka":
-            return parse_cpu_usage(container["usage"]["cpu"])
-    return 0
-
-def parse_cpu_usage(cpu_usage):
-    """Parse CPU usage string and convert to millicores."""
-    if cpu_usage.endswith("m"):
-        return int(cpu_usage[:-1])
-    return int(cpu_usage) * 1000
 
 def calculate_average_cpu_usage(cpu_usages):
     """Calculate the average CPU usage."""
@@ -127,8 +110,9 @@ def calculate_average_cpu_usage(cpu_usages):
 
 def check_threshold():
     """Check the scaling parameters and determine if scaling is needed and which metrics caused it."""
-    cpu_usage = get_kafka_brokers_cpu_usage()
-    if cpu_usage > 0.8:
+    #cpu_usage = get_kafka_brokers_cpu_usage()
+    cpu_usage = 100
+    if cpu_usage > 80:
         return (True,  "cpu")
     idle_thread = get_request_handler_idle_ratio()
 
@@ -158,14 +142,14 @@ def get_consumers_count():
 
 
 def get_brokers_count():
-    kafka_cr = custom_api.get_KAFKA_NAMESPACEd_custom_object(
+    kafka_cr = custom_api.get_namespaced_custom_object(
         group="kafka.strimzi.io",
         version="v1beta2",  # or "v1beta1" depending on your Strimzi version
-        KAFKA_NAMESPACE=KAFKA_NAMESPACE,
-        plural="kafkas",
-        name=KAFKA_CLUSTER_NAME
+        namespace=KAFKA_NAMESPACE,
+        plural="kafkanodepools",
+        name='broker'
     )
-    return kafka_cr["spec"]["kafka"]["replicas"]
+    return kafka_cr["spec"]["replicas"]
 
 
 def handle_scale(custom_api):
@@ -193,7 +177,7 @@ def handle_scale(custom_api):
 # Kubernetes API client
 custom_api = initialize_kubernetes()
 import time
-interval = 60  # Check every 60 seconds
+interval = 1  # Check every 60 seconds
 while True:
     # Sleep for the specified interval
     time.sleep(interval)
