@@ -183,7 +183,8 @@ def handle_scale(custom_api):
 # Kubernetes API client
 custom_api = initialize_kubernetes()
 import time
-interval = 1  # Check every 60 seconds
+#interval = 1  # for testing, check every second
+interval = 60  # Check every 60 seconds
 while True:
     # Sleep for the specified interval
     time.sleep(interval)
