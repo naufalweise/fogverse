@@ -125,16 +125,22 @@ ALWAYS_SCALE_METRICS = ["cpu", "idle_thread"]  # Example metrics to check for sc
 
 import requests  # Add this import for Prometheus API calls
 
+CONSUMER_GROUP_NAME = "my-group-1"  # Replace with your consumer group name
 
 def get_consumers_count():
     """Fetch the Kafka consumers count from Prometheus."""
-    query = 'kafka_consumer_group_current_offset'  # Replace with the correct Prometheus query for Kafka consumers
+    query = (
+            'kafka_consumergroup_members{consumergroup="' + CONSUMER_GROUP_NAME + '"}'
+        )
     try:
         response = requests.get(f"{PROMETHEUS_URL}/api/v1/query", params={"query": query})
         response.raise_for_status()
         data = response.json()
         # Extract the consumers count from the Prometheus response
-        consumers_count = len(data["data"]["result"])
+        if not data["data"]["result"]:
+            return 0 # theres no consumer group with specified name
+
+        consumers_count = int(data["data"]["result"][0]["value"][1])
         return consumers_count
     except requests.exceptions.RequestException as e:
         print(f"Error fetching consumers count from Prometheus: {e}")
