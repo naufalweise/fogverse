@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# delete topic, if exists
+# delete topic, if exists.
 if [ ! -z "$(kafka/bin/kafka-topics.sh \
               --list \
               --topic test-topic \
@@ -12,7 +12,7 @@ if [ ! -z "$(kafka/bin/kafka-topics.sh \
     --bootstrap-server localhost:29091
 fi
 
-# create topic
+# create topic.
 kafka/bin/kafka-topics.sh \
   --create \
   --topic test-topic \

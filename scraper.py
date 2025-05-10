@@ -80,18 +80,18 @@ if __name__ == "__main__":
         subprocess.run([generate_compose_cmd, "generate_compose.py"], check=True)
         subprocess.run(["docker", "compose", "up", "-d"], check=True)
 
-        while True:
-            try:
-                admin_client = AdminClient({
-                    "bootstrap.servers": "localhost:29091"
-                })
-                print("Kafka is ready!")
-                break
-            except NoBrokersAvailable:
-                print("Waiting for Kafka...")
-                time.sleep(1)  # Retry every second
+        # while True:
+        #     try:
+        #         admin_client = AdminClient({
+        #             "bootstrap.servers": "localhost:29091"
+        #         })
+        #         print("Kafka is ready!")
+        #         break
+        #     except NoBrokersAvailable:
+        #         print("Waiting for Kafka...")
+        #         time.sleep(1)  # Retry every second
 
-        benchmark_production_throughput_per_partition()
+        # benchmark_production_throughput_per_partition()
     except Exception as e:
         print("ERROR:", e)
     finally:
@@ -117,5 +117,7 @@ def produce_test_messages(topic, num_records=1000, record_size=100, bootstrap_se
     elapsed_time = time.time() - start_time
     print(f"Sent {num_records} messages in {elapsed_time:.2f} seconds")
 
-# ./kafka/bin/kafka-producer-perf-test.sh --topic test-topic --num-records 1000 --record-size 100 --throughput -1 --producer-props bootstrap.servers=localhost:29091
+# ./kafka/bin/kafka-producer-perf-test.sh --topic test-topic --num-records 2457600 --record-size 1024 --throughput 153600 --producer-props bootstrap.servers=localhost:29091
+# ./kafka/bin/kafka-producer-perf-test.sh --topic test-topic --num-records 2 --record-size 1024 --throughput -1 --producer-props bootstrap.servers=localhost:29091
+
 # 1000 records sent, 2247.2 records/sec (0.21 MB/sec), 26.79 ms avg latency, 411.00 ms max latency, 26 ms 50th, 46 ms 95th, 50 ms 99th, 411 ms 99.9th.

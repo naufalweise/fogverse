@@ -40,7 +40,7 @@ services:
     volumes:
       - kafka_data_{node_id}:/var/lib/kafka/data
     mem_limit: 2g
-    cpus: 2.0
+    cpus: 1.0
 
 """
         base_yaml += kafka_service

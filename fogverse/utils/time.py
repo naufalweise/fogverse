@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 
-# default format for timestamps
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 def get_timestamp(utc=True):
