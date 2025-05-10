@@ -97,7 +97,7 @@ class Runnable:
                     data = data.cpu().numpy()
                 case np.ndarray():
                     # If it's already a NumPy array, compress or convert it to bytes.
-                    return compress_encoding(data, getattr(self, "compressor", None)) or numpy_to_bytes(data)
+                    return compress_encoding(data, getattr(self, "encoding", None)) or numpy_to_bytes(data)
             # If it's not a recognized type, convert it to bytes.
             return bytes(data)
 

@@ -3,8 +3,8 @@ from logging import Formatter
 class DelimitedFormatter(Formatter):
     """Custom CSV formatter for logging, ensuring messages are formatted as CSV-friendly strings."""
 
-    def __init__(self, fmt=None, datefmt=None, delimiter=","):
-        super().__init__(fmt, datefmt)
+    def __init__(self, message_format=None, datefmt=None, delimiter=","):
+        super().__init__(message_format, datefmt)
         self.delimiter = delimiter
 
     def delimit_message(self, msg):

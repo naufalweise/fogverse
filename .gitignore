@@ -1,10 +1,10 @@
-/venv
 # .env
-
-**/__pycache__/
-/logs
-/profiling
+venv
 
 fogverse.egg-info
+**/__pycache__/
 
-/kafka
+kafka
+
+logs
+profiling

@@ -5,11 +5,11 @@ from os import path
 class LogFileRotator(RotatingFileHandler):
     """Rotating file handler for CSV logging."""
 
-    def __init__(self, filename, fmt=None, datefmt=None, max_size=0, header=None, delimiter=",", mode="a", **kwargs):
+    def __init__(self, filename, message_format=None, datefmt=None, max_size=0, header=None, delimiter=",", mode="a", **kwargs):
         super().__init__(filename, maxBytes=max_size, mode=mode, **kwargs)
 
         # Format the header into a CSV string if one is provided.
-        self.formatter = DelimitedFormatter(fmt, datefmt, delimiter)
+        self.formatter = DelimitedFormatter(message_format, datefmt, delimiter)
         self._header = self.formatter.delimit_message(header) if header else None
 
         # Write header if the file is new or opened in write mode.

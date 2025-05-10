@@ -1,6 +1,6 @@
-import time
 import aiokafka
 import asyncio
+import time
 
 from fogverse.logger import FogLogger
 from fogverse.runnable import Runnable
@@ -26,8 +26,10 @@ class KafkaProducer(Runnable):
     async def start_producer(self):
         """Starts the Kafka producer."""
 
-        self.logger.std_log(f"KAFKA PRODUCER START - TOPIC: {self.producer_topic}, CONFIG: {self.producer_conf}")
         await self.producer.start()
+        self.logger.std_log(
+            f"KAFKA PRODUCER STARTED\nTOPIC: {self.producer_topic}\nCONFIG: {self.producer_conf}"
+        )
 
     async def send(self, data, topic=None, key=None, headers=None, callback=None):
         """Sends a message to the given Kafka topic with optional callback execution."""
@@ -54,4 +56,4 @@ class KafkaProducer(Runnable):
         """Gracefully stops the Kafka producer."""
 
         await self.producer.stop()
-        self.logger.std_log("Producer has closed.")
+        self.logger.std_log("KAFKA PRODUCER CLOSED")

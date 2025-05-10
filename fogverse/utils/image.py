@@ -1,9 +1,9 @@
 """Manages all image-related operations."""
 
-from fogverse.utils.data import bytes_to_numpy, numpy_to_bytes
-
 import base64
 import cv2
+
+from fogverse.utils.data import bytes_to_numpy, numpy_to_bytes
 
 def _encode(img, encoding, *args):
     """Encodes an image using OpenCV."""
@@ -27,7 +27,7 @@ def recover_encoding(img_bytes):
     return _decode(bytes_to_numpy(img_bytes))
 
 def numpy_to_base64_url(img, encoding, *args):
-    """Converts a NumPy image array to a Base64-encoded data URL."""
+    """Converts a NumPy image array to a base64-encoded data URL."""
 
     encoded_img = _encode(img, encoding, *args)
     b64 = base64.b64encode(encoded_img).decode()

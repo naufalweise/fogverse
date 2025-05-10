@@ -1,26 +1,26 @@
 """Manages all data and configuration operations."""
 
-from dotenv import load_dotenv
-from io import BytesIO
-
 import inspect
 import numpy as np
 import os
 import sys
 import uuid
 
-# Load environment variables first.
-log = load_dotenv(".env")  # Add this line.
+from dotenv import load_dotenv
+from io import BytesIO
+
+load_dotenv(".env")
 
 def get_cam_id():
     """Generates a camera ID using an environment variable if available, otherwise creates a UUID."""
 
-    return f"cam_{os.getenv("CAM_ID", str(uuid.uuid4()))}"
+    cam_id = os.getenv("CAM_ID")
+    return cam_id if cam_id else f"cam_{uuid.uuid4()}"
 
-def bytes_to_numpy(bbytes):
+def bytes_to_numpy(bytes):
     """Converts byte data into a NumPy array."""
 
-    with BytesIO(bbytes) as f:
+    with BytesIO(bytes) as f:
         return np.load(f, allow_pickle=True)
 
 def numpy_to_bytes(arr):
@@ -32,7 +32,7 @@ def numpy_to_bytes(arr):
 
 def get_mem_size(obj, seen=None):
     """
-    Recursively calculates the memory size of an object in kilo bytes.
+    Recursively calculates the memory size of an object in kilobits.
     Adapted from https://github.com/bosswissam/pysize/blob/master/pysize.py.
     """
 
@@ -72,7 +72,7 @@ def get_mem_size(obj, seen=None):
     if hasattr(obj, "__slots__"):
         size += sum(get_mem_size(getattr(obj, s), seen) for s in obj.__slots__ if hasattr(obj, s))
 
-    return size / 1_000
+    return size / 1_024
 
 def get_header(headers, key, default=None, decoder=None):
     """Retrieves a header value from a list of headers, with optional decoding."""
@@ -104,7 +104,7 @@ def get_config(config_name: str, cls: object = None, default=None):
     if cls is None:
         return default
 
-    # Try to get the value from the class attribute, or return the default if it doesn"t exist.
+    # Try to get the value from the class attribute, or return the default if it doesn't exist.
     return getattr(cls, config_name.lower(), default)
 
 def resolve_env_variables(data):

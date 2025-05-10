@@ -14,11 +14,11 @@ class FogProfiler(AbstractProfiler):
     CSV_HEADER = [
         "topic from", "topic to", "frame", "offset received",
         "frame delay (ms)", "msg creation delay (ms)",
-        "consume time (ms)", "data size consumed (KB)",
-        "decode time (ms)", "data size decoded (KB)",
-        "process time (ms)", "data size processed (KB)",
-        "encode time (ms)", "data size encoded (KB)",
-        "send time (ms)", "data size sent (KB)", "offset sent",
+        "consume time (ms)", "data size consumed (Kb)",
+        "decode time (ms)", "data size decoded (Kb)",
+        "process time (ms)", "data size processed (Kb)",
+        "encode time (ms)", "data size encoded (Kb)",
+        "send time (ms)", "data size sent (Kb)", "offset sent",
     ]
 
     def __init__(self, name=f"profiling_{int(time.time())}", dirname="profiling", topic="fogverse-profiling"):
@@ -40,7 +40,7 @@ class FogProfiler(AbstractProfiler):
         """Log data after receiving, including time taken and data size."""
 
         self.log_data["consume time (ms)"] = calc_datetime(self._start_time)
-        self.log_data["data size consumed (KB)"] = get_mem_size(data.get("data", data) if isinstance(data, dict) else data)
+        self.log_data["data size consumed (Kb)"] = get_mem_size(data)
 
     def _before_decode(self, _):
         """Record the timestamp before decoding data."""
@@ -51,7 +51,7 @@ class FogProfiler(AbstractProfiler):
         """Log time taken to decode and store relevant metadata."""
 
         self.log_data["decode time (ms)"] = calc_datetime(self._before_decode_time)
-        self.log_data["data size decoded (KB)"] = get_mem_size(data)
+        self.log_data["data size decoded (Kb)"] = get_mem_size(data)
 
         if isinstance(data, ConsumerRecord):
             now = get_timestamp()
@@ -74,11 +74,11 @@ class FogProfiler(AbstractProfiler):
 
         self._before_process_time = get_timestamp()
 
-    def _after_process(self, result):
+    def _after_process(self, data):
         """Log time taken to process and store processed data size."""
 
         self.log_data["process time (ms)"] = calc_datetime(self._before_process_time)
-        self.log_data["data size processed (KB)"] = get_mem_size(result)
+        self.log_data["data size processed (Kb)"] = get_mem_size(data)
 
     def _before_encode(self, _):
         """Record the timestamp before encoding data."""
@@ -89,13 +89,13 @@ class FogProfiler(AbstractProfiler):
         """Log time taken to encode and store encoded data size."""
 
         self.log_data["encode time (ms)"] =calc_datetime(self._before_encode_time)
-        self.log_data["data size encoded (KB)"] = get_mem_size(data)
+        self.log_data["data size encoded (Kb)"] = get_mem_size(data)
 
     def _before_send(self, data):
         """Record the timestamp before sending data and log data size."""
 
         self._datetime_before_send = get_timestamp()
-        self.log_data["data size sent (KB)"] = get_mem_size(data)
+        self.log_data["data size sent (Kb)"] = get_mem_size(data)
 
     def _after_send(self, _):
         """Log the time taken to send data and save log if profiling data exists."""

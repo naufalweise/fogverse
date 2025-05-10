@@ -1,11 +1,11 @@
-from dataclasses import dataclass
+import yaml
+
 from confluent_kafka.admin import AdminClient, ConfigResource, NewPartitions, NewTopic
 from confluent_kafka.error import KafkaError
+from dataclasses import dataclass
 from fogverse.constants import DEFAULT_NUM_PARTITIONS
 from fogverse.utils.data import resolve_env_variables
 from pathlib import Path
-
-import yaml
 
 def configure_topics(filepath: str, create=False):
     """
@@ -66,8 +66,8 @@ def setup_topics(admin, topics, alter_if_exist=True):
 
     responses = admin.create_topics(topic_instances)
 
-    for topic in topic_instances:
-        topic_name, num_partitions, config = topic.topic, topic.num_partitions, topic.config
+    for topic_instance in topic_instances:
+        topic_name, num_partitions, config = topic_instance.topic, topic_instance.num_partitions, topic_instance.config
         error = responses[topic_name].exception(4)  # Wait up to 4 secs.
 
         if not error:
@@ -78,22 +78,22 @@ def setup_topics(admin, topics, alter_if_exist=True):
             if alter_if_exist:
                 print(f"Topic {topic_name} exists, updating...")
                 increase_partitions(topic_name, admin, num_partitions)
-                alter_config(topic_name, admin, config)
+                alter_topic_config(topic_name, admin, config)
                 print(f"Topic {topic_name} altered.")
             else:
                 print(f"Topic {topic_name} exists, skipping...")
 
 def increase_partitions(topic_name, admin, num_partitions):
     """
-    Increase the number of partitions for a Kafka topic if requested_partitions is higher than the current count.
-    If the requested number is lower than or equal to the current partitions, no change is made.
+    If `requested_partitions` exceeds the current partition count,
+    expand the topic to that size. Otherwise, leave it unchanged.
     """
 
     new_parts = NewPartitions(topic_name, num_partitions)
     responses = admin.create_partitions([new_parts])
 
     for future in responses.values():
-        exc = future.exception(4)  # Wait up to 4 secs for response.
+        exc = future.exception(4)  # Wait up to 4 secs.
         if exc:
             error_code = exc.args[0].code() if exc.args else None
             if error_code == KafkaError.INVALID_PARTITIONS:  # Topic already has more partitions or invalid `num_partitions`.
@@ -101,7 +101,7 @@ def increase_partitions(topic_name, admin, num_partitions):
                 continue
             raise exc
 
-def alter_config(topic_name, admin, config):
+def alter_topic_config(topic_name, admin, config):
     """Update the configuration of an existing Kafka topic."""
 
     if not config:
@@ -112,5 +112,5 @@ def alter_config(topic_name, admin, config):
     ])
 
     for future in res.values():
-        if (exc := future.exception(4)):  # Wait up to 4 secs for response.
+        if (exc := future.exception(4)):  # Wait up to 4 secs.
             raise exc
