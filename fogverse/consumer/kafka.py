@@ -1,7 +1,7 @@
-import time
 import aiokafka
 import asyncio
 import socket
+import time
 
 from fogverse.logger import FogLogger
 from fogverse.runnable import Runnable
@@ -16,7 +16,6 @@ class KafkaConsumer(Runnable):
         self.client_id = client_id
 
         self.logger = FogLogger(name=client_id)
-        self.read_last = read_last
 
         self.consumer_topic = self._parse_topics(consumer_topic)
         self.consumer_conf = {
@@ -30,9 +29,7 @@ class KafkaConsumer(Runnable):
             *self.consumer_topic,
             **self.consumer_conf
         )
-
-        if read_last:
-            self.seeking_end = asyncio.ensure_future(self.consumer.seek_to_end())
+        self.read_last = read_last
 
     @staticmethod
     def _parse_topics(topic):
@@ -43,21 +40,26 @@ class KafkaConsumer(Runnable):
     async def start_consumer(self):
         """Starts the Kafka consumer and subscribes to topics."""
 
-        self.logger.std_log(f"KAFKA CONSUMER START - TOPIC: {self.consumer_topic}, CONFIG: {self.consumer_conf}")
         await self.consumer.start()
+        self.logger.std_log(
+            f"KAFKA CONSUMER STARTED\nTOPIC: {self.consumer_topic}\nCONFIG: {self.consumer_conf}"
+        )
 
-        # Give some time to assign partitions.
-        await asyncio.sleep(4)
+        # Wait for partition assignment.
+        self.logger.std_log("The consumer is waiting for Kafka to assign partitions. Please wait.")
+        while not self.consumer.assignment():
+            await asyncio.sleep(2)
+
+        self.logger.std_log("Kafka has successfully assigned partitions to the consumer.")
 
     async def receive(self):
         """Fetches a single message from Kafka."""
 
-        if self.read_last and asyncio.isfuture(self.seeking_end):
-            await self.seeking_end
+        if self.read_last: await self.consumer.seek_to_end()
         return await self.consumer.getone()
 
     async def close_consumer(self):
         """Gracefully stops the Kafka consumer."""
 
         await self.consumer.stop()
-        self.logger.std_log("Consumer has closed.")
+        self.logger.std_log("KAFKA CONSUMER CLOSED")

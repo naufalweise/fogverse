@@ -25,7 +25,12 @@ class LogFileRotator(RotatingFileHandler):
             return
         else:
             # NOTE: Temporarily disable formatter to avoid extra processing (legacy behavior).
+
+            # Save the original format method.
             original_format = self.formatter.format
+            # This is a no-op to avoid formatting the header.
             self.formatter.format = lambda x: x
-            self.handle(self._header)  # Write header.
+            # Write the header to the new log file.
+            self.handle(self._header)
+            # Restore the original format method.
             self.formatter.format = original_format

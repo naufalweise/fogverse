@@ -45,13 +45,6 @@ class Runnable:
             # Skip decoding if auto_decode is disabled.
             return data
 
-        # NOTE: This is legacy code and may require updates in the future.  
-        # This handles the ConsumerStorage message format.  
-        from fogverse.consumer import ConsumerStorage
-        if isinstance(self.consumer, ConsumerStorage):
-            self.message = data["message"]
-            data = data["data"]["data"]
-
         # Attempt to decode as an image.
         try:
             arr = bytes_to_numpy(data)

@@ -35,8 +35,9 @@ class ConsumerStorage(Runnable):
         This method is asynchronous and will block if the queue is full.
         """
 
-        if not self.keep_messages and not self.queue.empty():
-            self.queue.get_nowait() # Discard message if queue isn't empty.
+        # If not keeping messages, clear the queue before adding a new one.
+        if not self.keep_messages:
+            while not self.queue.empty(): self.queue.get_nowait()
 
         obj = {
             "data": data,
