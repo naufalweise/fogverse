@@ -17,12 +17,12 @@ class Runnable:
     and lets you plug in optional steps to run before or after each stage.
     """
 
-    def __init__(self):
+    def __init__(self, auto_decode: bool = True, auto_encode: bool = True):
         super().__init__()
         self.message: Optional[Any] = None
 
-        self.auto_decode: bool = False
-        self.auto_encode: bool = False
+        self.auto_decode: bool = auto_decode
+        self.auto_encode: bool = auto_encode
 
         self._started = False
         self._closed = False

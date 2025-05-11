@@ -3,7 +3,7 @@ import asyncio
 from fogverse.consumer import KafkaConsumer
 from fogverse.producer import KafkaProducer
 
-kafka_server = "localhost:9020"
+kafka_server = "localhost:9092"
 kafka_topic = "counting"
 
 class MessageProducer(KafkaProducer):
