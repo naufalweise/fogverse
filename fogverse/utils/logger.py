@@ -31,17 +31,17 @@ def get_base_logger(name=None, level=FOGV_STDOUT, handlers=None, formatter=None)
 
     return logger  # Return the configured logger.
 
-def get_txt_logger(name=None, dirname="logs", mode="w", **kwargs):
+def get_txt_logger(name=f"log_{int(time.time())}.txt", dirname="logs", mode="w", **kwargs):
     """Create a txt-based logger that writes logs to a persistent file."""
 
     # Determine the full file path where logs will be stored.
-    filename = Path(dirname) / (name or f"log_{int(time.time())}.txt")
+    filepath = Path(dirname) / name
 
     # Ensure the directory exists before writing logs.
-    filename.parent.mkdir(parents=True, exist_ok=True)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
 
     # Create a file handler.
-    handler = logging.FileHandler(filename, mode=mode)
+    handler = logging.FileHandler(filepath, mode=mode)
 
     # Set the log message format.
     handler.setFormatter(logging.Formatter(fmt=DEFAULT_FMT))
@@ -49,20 +49,20 @@ def get_txt_logger(name=None, dirname="logs", mode="w", **kwargs):
     # Create and return a logger using the base logger function, with the file handler attached.
     return get_base_logger(name, level=FOGV_TXT, handlers=handler, **kwargs)
 
-def get_csv_logger(name=None, dirname="logs", header=[], mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", **kwargs):
+def get_csv_logger(name=f"log_{int(time.time())}.csv", dirname="logs", header=[], mode="w", delimiter=",", datefmt="%Y/%m/%d %H:%M:%S", **kwargs):
     """Create a CSV-based logger that writes logs to a persistent file."""
 
     # Define the log message format using the specified delimiter.
     message_format = f"%(asctime)s.%(msecs)03d{delimiter}%(name)s{delimiter}%(message)s"
 
     # Determine the full file path where logs will be stored.
-    filename = Path(dirname) / (name or f"log_{int(time.time())}.csv")
+    filepath = Path(dirname) / name
 
     # Ensure the directory exists before writing logs.
-    filename.parent.mkdir(parents=True, exist_ok=True)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
 
     # Create a rotating file handler.
-    handler = LogFileRotator(filename, message_format=message_format, datefmt=datefmt, header=header, delimiter=delimiter, mode=mode)
+    handler = LogFileRotator(filepath, message_format=message_format, datefmt=datefmt, header=header, delimiter=delimiter, mode=mode)
 
     # Set the log message format using a custom CSV-friendly formatter.
     handler.setFormatter(DelimitedFormatter(message_format=message_format, datefmt=datefmt, delimiter=delimiter))

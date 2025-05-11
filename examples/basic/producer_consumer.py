@@ -19,7 +19,7 @@ class MessageProducer(KafkaProducer):
         await asyncio.sleep(1)
         message = f"Message {self.counter}"
         self.counter += 1
-        self.logger.std_log(f"Producing: {message}")
+        self.logger.log_all(f"Producing: {message}")
         return message
 
 class MessageConsumer(KafkaConsumer):
@@ -31,7 +31,7 @@ class MessageConsumer(KafkaConsumer):
     def process(self, data):
         """Process the received message."""
 
-        self.logger.std_log(f"Received: {data}")
+        self.logger.log_all(f"Received: {data}")
         return f"Processed: {data}"
 
 async def run_producer():
