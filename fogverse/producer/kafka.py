@@ -40,13 +40,14 @@ class KafkaProducer(Runnable):
 
         if not (topic := topic or self.producer_topic):
             raise ValueError("Topic should not be None.")
-        response = await self.producer.send(topic, value=data, key=key, headers=headers)
+        metadata = await self.producer.send(topic, value=data, key=key, headers=headers)
 
         if not callable(callback := callback or getattr(self, "callback", None)):
-            return response
+            return metadata
 
         async def _call_callback_ack():
-            return await callback(response, *self._get_extra_callback_args() if hasattr(self, "_get_extra_callback_args") else ())
+            result = callback(metadata, *self._get_extra_callback_args() if hasattr(self, "_get_extra_callback_args") else ())
+            return await result if asyncio.iscoroutine(result) else result
 
         return asyncio.ensure_future(_call_callback_ack())  # Return an awaitable future.
 

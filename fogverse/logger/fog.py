@@ -1,8 +1,7 @@
+import logging
+
 from fogverse.constants import FOGV_CSV, FOGV_TXT, FOGV_STDOUT
 from fogverse.utils.logger import get_base_logger, get_txt_logger, get_csv_logger
-
-import logging
-import time
 
 # Register custom log levels with `logging`.
 logging.addLevelName(FOGV_STDOUT, "FOGV_STDOUT")
