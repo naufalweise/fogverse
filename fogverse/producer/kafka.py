@@ -55,4 +55,4 @@ class KafkaProducer(Runnable):
         """Gracefully stops the Kafka producer."""
 
         await self.producer.stop()
-        self.logger.std_log("KAFKA PRODUCER CLOSED")
+        self.logger.log_all("KAFKA PRODUCER CLOSED")

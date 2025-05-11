@@ -62,4 +62,4 @@ class KafkaConsumer(Runnable):
         """Gracefully stops the Kafka consumer."""
 
         await self.consumer.stop()
-        self.logger.std_log("KAFKA CONSUMER CLOSED")
+        self.logger.log_all("KAFKA CONSUMER CLOSED")

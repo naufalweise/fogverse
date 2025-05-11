@@ -44,7 +44,7 @@ def get_txt_logger(name=f"log_{int(time.time())}.txt", dirname="logs", mode="w",
     handler = logging.FileHandler(filepath, mode=mode)
 
     # Set the log message format.
-    handler.setFormatter(logging.Formatter(fmt=DEFAULT_FMT))
+    handler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(message)s"))
 
     # Create and return a logger using the base logger function, with the file handler attached.
     return get_base_logger(name, level=FOGV_TXT, handlers=handler, **kwargs)
@@ -53,7 +53,7 @@ def get_csv_logger(name=f"log_{int(time.time())}.csv", dirname="logs", header=[]
     """Create a CSV-based logger that writes logs to a persistent file."""
 
     # Define the log message format using the specified delimiter.
-    message_format = f"%(asctime)s.%(msecs)03d{delimiter}%(name)s{delimiter}%(message)s"
+    message_format = f"%(asctime)s.%(msecs)03d{delimiter}%(message)s"
 
     # Determine the full file path where logs will be stored.
     filepath = Path(dirname) / name

@@ -1,4 +1,5 @@
 import asyncio
+import signal
 
 from fogverse.consumer import KafkaConsumer
 from fogverse.producer import KafkaProducer
@@ -47,13 +48,32 @@ async def run_consumer():
 async def main():
     """Run producer and consumer concurrently."""
 
+    loop = asyncio.get_running_loop()
+    stop_event = asyncio.Event()
+
+    def shutdown():
+        print("\n[!] Program interrupted by user. Stopping now.")
+        stop_event.set()
+
+    loop.add_signal_handler(signal.SIGINT, shutdown)
+    loop.add_signal_handler(signal.SIGTERM, shutdown)
+
+    consumer = MessageConsumer()
+    producer = MessageProducer()
+
+    consumer_task = asyncio.create_task(consumer.run())
+    producer_task = asyncio.create_task(producer.run())
+
+    await stop_event.wait()
+
+    consumer_task.cancel()
+    producer_task.cancel()
+
     try:
-        await asyncio.gather(
-            run_consumer(),
-            run_producer()
-        )
-    except KeyboardInterrupt:
-        print("Program interrupted. Stopping now.")
+        await consumer_task
+        await producer_task
+    except asyncio.CancelledError:
+        pass
 
 if __name__ == "__main__":
     asyncio.run(main())
