@@ -36,6 +36,7 @@ def generate_docker_compose(n, base_port=9090):
       KAFKA_CONTROLLER_QUORUM_VOTERS: "{quorum_voters}"
       KAFKA_LOG_DIRS: "/var/lib/kafka/data"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "{min(n, 5)}"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "{min(n, 5)}"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "{min(n, 5)}"

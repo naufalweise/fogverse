@@ -4,12 +4,12 @@
 if [ ! -z "$(kafka/bin/kafka-topics.sh \
               --list \
               --topic test-topic \
-              --bootstrap-server localhost:29091)" ] ; then
+              --bootstrap-server localhost:9092)" ] ; then
   echo "deleting topic"
   kafka/bin/kafka-topics.sh \
     --delete \
     --topic test-topic \
-    --bootstrap-server localhost:29091
+    --bootstrap-server localhost:9092
 fi
 
 # create topic.
@@ -18,4 +18,4 @@ kafka/bin/kafka-topics.sh \
   --topic test-topic \
   --partitions 1 \
   --replication-factor 1 \
-  --bootstrap-server localhost:29091
+  --bootstrap-server localhost:9092
