@@ -4,9 +4,10 @@ import os
 import select # For non-blocking I/O.
 import sys
 
+from experiments.constants import CONTAINER_NAME
+
 # Configuration.
-CONTAINER_NAME = "test-container-0"
-TARGET_INTERVAL = 1.0  # Desired refresh interval in seconds.
+UPDATE_INTERVAL = 1.0  # Desired update interval in seconds.
 
 # Globals for managing the continuous iostat process and its data.
 iostat_process = None
@@ -104,6 +105,28 @@ def get_docker_stats(container_name_or_id):
     mem = output[1] if len(output) > 1 else "N/A"
     return cpu, mem, None
 
+def get_resource_usage_snapshot(container_name="test-container-0"):
+    process_iostat_stream()  # Update the latest_iostat_data
+
+    cpu_usage, mem_usage, docker_error = get_docker_stats(container_name)
+    if docker_error:
+        cpu_usage = None
+        mem_usage = None
+
+    disk_util = None
+    if 'dm-0' in latest_iostat_data:
+        # Kafka uses dm-0 as the device name for disk I/O.
+        try:
+            disk_util = float(latest_iostat_data['dm-0'])
+        except ValueError:
+            disk_util = None
+
+    return {
+        "cpu_usage": cpu_usage,
+        "ram_usage": mem_usage,
+        "disk_util": disk_util
+    }
+
 if __name__ == "__main__":
     if not start_iostat_stream():
         sys.exit("Failed to initialize iostat monitoring. Exiting.")
@@ -136,7 +159,7 @@ if __name__ == "__main__":
             # Calculate elapsed time and sleep to maintain the target refresh interval.
             loop_end_time = time.monotonic()
             elapsed_time = loop_end_time - loop_start_time
-            sleep_duration = TARGET_INTERVAL - elapsed_time
+            sleep_duration = UPDATE_INTERVAL - elapsed_time
             if sleep_duration > 0:
                 time.sleep(sleep_duration)
 

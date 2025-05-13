@@ -20,6 +20,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+    labels:
+      cluster_id: "test-cluster"
     ports:
       - "9090:9090"
       - "9092:9092"
@@ -31,3 +33,5 @@ services:
 
 volumes:
   kafka_test_data_0:
+    labels:
+      cluster_id: "test-cluster"
