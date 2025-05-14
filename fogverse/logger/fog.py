@@ -15,8 +15,8 @@ class FogLogger:
         super().__init__()
 
         self._std_log = get_base_logger(name, **std_log_kwargs)
-        self._txt_log = get_txt_logger(f"{name}.txt", dirname, **txt_log_kwargs)
-        self._csv_log = get_csv_logger(f"{name}.csv", dirname, csv_header, **csv_log_kwargs)
+        self._txt_log = get_txt_logger(f"{name}.txt" if name else None, dirname, **txt_log_kwargs)
+        self._csv_log = get_csv_logger(f"{name}.csv" if name else None, dirname, csv_header, **csv_log_kwargs)
 
     def _log(self, logger, message, *args, **kwargs):
         logger._log(logger.level, message, args, **kwargs)

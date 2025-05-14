@@ -1,70 +1,85 @@
-import asyncio
-import signal
 import time
+import threading
+import random
+from confluent_kafka import Producer, Consumer, KafkaError
 
-from fogverse.producer import KafkaProducer
-from monitor import start_iostat_stream, get_resource_usage_snapshot
+from experiments.constants import BROKER_ADDRESS, TOPIC_NAME
 
-kafka_server = "localhost:9092"
-kafka_topic = "prod-throughput"
+TARGET_TP_MB = 5  # Target production rate in MB/s
+TARGET_TC = True  # Whether consumer is active
 
-class MessageProducer(KafkaProducer):
-    """Produces messages to a Kafka topic."""
-    
-    def __init__(self):
-        super().__init__(producer_server=kafka_server, producer_topic=kafka_topic)
-        self.counter = 0
+produce_count = 0
+produce_bytes = 0
+consume_count = 0
+consume_bytes = 0
 
-    async def receive(self):
-        """Generate a new message every second."""
+produce_lock = threading.Lock()
+consume_lock = threading.Lock()
 
-        await asyncio.sleep(1)
-        message = f"Message {self.counter}"
-        self.counter += 1
-        self.logger.log_all(f"Producing: {message}")
-        return message
 
-async def run_producer():
-    """Run the producer."""
-    producer = MessageProducer()
-    await producer.run()
+def delivery_report(err, msg):
+    global produce_bytes, produce_count
+    if err is None:
+        with produce_lock:
+            produce_bytes += len(msg.value())
+            produce_count += 1
 
-async def main():
-    """Run producer and consumer concurrently."""
 
-    if not start_iostat_stream():
-        raise RuntimeError("Failed to start iostat")
+def produce_loop():
+    global produce_bytes
+    p = Producer({'bootstrap.servers': BROKER_ADDRESS})
+    msg_size = 10000  # 10KB message
+    interval = (msg_size / 1024**2) / TARGET_TP_MB  # time between messages to meet rate
 
-    try:
-        while True:
-            usage = get_resource_usage_snapshot("test-container-0")
-            print(usage)
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Stopped.")
+    while True:
+        value = bytes(random.getrandbits(8) for _ in range(msg_size))
+        p.produce(TOPIC_NAME, value=value, callback=delivery_report)
+        p.poll(0)
+        time.sleep(interval)  # attempt rate limiter
 
-    loop = asyncio.get_running_loop()
-    stop_event = asyncio.Event()
 
-    def shutdown():
-        print("\n[!] Program interrupted by user. Stopping now.")
-        stop_event.set()
+def consume_loop():
+    global consume_bytes, consume_count
+    c = Consumer({
+        'bootstrap.servers': BROKER_ADDRESS,
+        'group.id': 'test-group',
+        'auto.offset.reset': 'earliest'
+    })
+    c.subscribe([TOPIC_NAME])
 
-    loop.add_signal_handler(signal.SIGINT, shutdown)
-    loop.add_signal_handler(signal.SIGTERM, shutdown)
+    while True:
+        msg = c.poll(timeout=1.0)
+        if msg is None or msg.error():
+            continue
+        with consume_lock:
+            consume_bytes += len(msg.value())
+            consume_count += 1
 
-    producer = MessageProducer()
 
-    producer_task = asyncio.create_task(producer.run())
+def monitor():
+    global produce_bytes, consume_bytes
+    while True:
+        time.sleep(1)
+        with produce_lock:
+            tp = produce_bytes / (1024**2)
+            produce_bytes = 0
+        with consume_lock:
+            tc = consume_bytes / (1024**2)
+            consume_bytes = 0
+        print(f"Actual Tp: {tp:.2f} MB/s | Actual Tc: {tc:.2f} MB/s")
 
-    await stop_event.wait()
-
-    producer_task.cancel()
-
-    try:
-        await producer_task
-    except asyncio.CancelledError:
-        pass
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    threads = []
+
+    threads.append(threading.Thread(target=produce_loop))
+    if TARGET_TC:
+        threads.append(threading.Thread(target=consume_loop))
+    threads.append(threading.Thread(target=monitor))
+
+    for t in threads:
+        t.daemon = True
+        t.start()
+
+    while True:
+        time.sleep(10)

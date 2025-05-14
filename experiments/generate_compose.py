@@ -1,10 +1,10 @@
 import sys
 
-from experiments.constants import CLUSTER_ID, CONTAINER_NAME, NODE_NAME, VOLUME_NAME
+from experiments.constants import CLUSTER_ID, CONTAINER_PREFIX, NODE_PREFIX, VOLUME_PREFIX
 
 def generate_docker_compose(n, base_port=9090):
     """
-    Generates a docker-compose file for n Kafka nodes.Node IDs start at 0 and increment by 2.
+    Generates a docker-compose file for n Kafka nodes. Node IDs start at 0 and increment by 2.
     Within the ports allocated per node, the internal listener port effectively ends with 0, the external ends with 2, and the controller ends with 4.
     """
 
@@ -12,7 +12,7 @@ def generate_docker_compose(n, base_port=9090):
     volumes = ['volumes:\n']
 
     quorum_voters = ",".join([
-        f"{i * 2}@{NODE_NAME}-{i * 2}:{base_port + (10 * i) + 4}" for i in range(n)
+        f"{i * 2}@{NODE_PREFIX}-{i * 2}:{base_port + (10 * i) + 4}" for i in range(n)
     ])
 
     for i in range(n):
@@ -23,15 +23,15 @@ def generate_docker_compose(n, base_port=9090):
             'controller': base_port + (10 * i) + 4
         }
 
-        kafka_service = f"""  {NODE_NAME}-{node_id}:
+        kafka_service = f"""  {NODE_PREFIX}-{node_id}:
     image: confluentinc/cp-kafka:latest
-    container_name: {CONTAINER_NAME}-{node_id}
+    container_name: {CONTAINER_PREFIX}-{node_id}
     environment:
       CLUSTER_ID: "{CLUSTER_ID}"
       KAFKA_NODE_ID: {node_id}
       KAFKA_PROCESS_ROLES: "controller,broker"
       KAFKA_LISTENERS: "INTERNAL://:{ports['internal']},EXTERNAL://:{ports['external']},CONTROLLER://:{ports['controller']}"
-      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://{CONTAINER_NAME}-{node_id}:{ports['internal']},EXTERNAL://localhost:{ports['external']}"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://{CONTAINER_PREFIX}-{node_id}:{ports['internal']},EXTERNAL://localhost:{ports['external']}"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
@@ -49,13 +49,13 @@ def generate_docker_compose(n, base_port=9090):
       - "{ports['external']}:{ports['external']}"
       - "{ports['controller']}:{ports['controller']}"
     volumes:
-      - {VOLUME_NAME}_{node_id}:/var/lib/kafka/data
+      - {VOLUME_PREFIX}_{node_id}:/var/lib/kafka/data
     mem_limit: 2g
     cpus: 1.0
 
 """
         yaml.append(kafka_service)
-        volumes.append(f"  {VOLUME_NAME}_{node_id}:\n    labels:\n      cluster_id: \"{CLUSTER_ID}\"\n")
+        volumes.append(f"  {VOLUME_PREFIX}_{node_id}:\n    labels:\n      cluster_id: \"{CLUSTER_ID}\"\n")
 
     return ''.join(yaml + volumes)
 

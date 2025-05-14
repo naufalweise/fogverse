@@ -1,7 +1,9 @@
 import subprocess
+import sys
 import time
 
-from experiments.constants import CLUSTER_ID, CONTAINER_NAME, TOPIC_NAME
+from experiments.constants import CLUSTER_ID, FIRST_CONTAINER, TOPIC_NAME
+from experiments.prod_throughput.monitor import monitor_resource_usage, start_iostat_stream
 
 def run(cmd, check=True, capture_output=False, **kwargs):
     return subprocess.run(cmd, shell=True, check=check, capture_output=capture_output, text=True, **kwargs)
@@ -18,18 +20,18 @@ def docker_compose_up():
 
 def wait_for_container_up(container_name):
     while True:
-        result = run(f'docker ps --filter "name={container_name}-0" --format "{{{{.Status}}}}"', capture_output=True)
+        result = run(f'docker ps --filter "name={container_name}" --format "{{{{.Status}}}}"', capture_output=True)
         status = result.stdout.strip()
         if status.startswith("Up"):
             break
         time.sleep(2)
 
-def create_topic():
+def create_topic(num_partitions=1):
     cmd = (
         "kafka/bin/kafka-topics.sh "
         "--create "
         f"--topic {TOPIC_NAME} "
-        "--partitions 1 "
+        f"--partitions {num_partitions} "
         "--replication-factor 1 "
         "--bootstrap-server localhost:9092"
     )
@@ -47,10 +49,16 @@ def main():
     docker_rm_all_with_label(CLUSTER_ID)
     generate_compose()
     docker_compose_up()
-    wait_for_container_up(CONTAINER_NAME)
+    wait_for_container_up(FIRST_CONTAINER)
     create_topic()
     wait_for_topic_ready()
     print("Kafka cluster is up and running.")
+
+    if not start_iostat_stream():
+        sys.exit("Failed to initialize iostat monitoring. Exiting.")
+    else:
+        time.sleep(4)
+        monitor_resource_usage()
 
 if __name__ == "__main__":
     main()

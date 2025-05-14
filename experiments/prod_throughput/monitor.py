@@ -1,10 +1,14 @@
 import subprocess
+import threading
 import time
 import os
 import select # For non-blocking I/O.
 import sys
 
-from experiments.constants import CONTAINER_NAME
+from experiments.constants import FIRST_CONTAINER
+from fogverse.logger.fog import FogLogger
+
+cancel_signal = threading.Event()
 
 # Configuration.
 UPDATE_INTERVAL = 1.0  # Desired update interval in seconds.
@@ -30,7 +34,7 @@ def start_iostat_stream():
         env=env
     )
     if iostat_process.poll() is not None: # Check if process started successfully.
-        print(f"Error starting iostat: {iostat_process.stderr.read()}", file=sys.stderr)
+        print(f"ERROR STARTING IOSTAT: {iostat_process.stderr.read()}", file=sys.stderr)
         return False
     return True
 
@@ -105,74 +109,69 @@ def get_docker_stats(container_name_or_id):
     mem = output[1] if len(output) > 1 else "N/A"
     return cpu, mem, None
 
-def get_resource_usage_snapshot(container_name="test-container-0"):
-    process_iostat_stream()  # Update the latest_iostat_data
-
-    cpu_usage, mem_usage, docker_error = get_docker_stats(container_name)
-    if docker_error:
-        cpu_usage = None
-        mem_usage = None
-
-    disk_util = None
-    if 'dm-0' in latest_iostat_data:
-        # Kafka uses dm-0 as the device name for disk I/O.
-        try:
-            disk_util = float(latest_iostat_data['dm-0'])
-        except ValueError:
-            disk_util = None
-
-    return {
-        "cpu_usage": cpu_usage,
-        "ram_usage": mem_usage,
-        "disk_util": disk_util
-    }
-
-if __name__ == "__main__":
-    if not start_iostat_stream():
-        sys.exit("Failed to initialize iostat monitoring. Exiting.")
+def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
+    logger = FogLogger(name=f"resource_usage_{int(time.time())}", csv_header=["timestamp", "cpu_usage", "ram_usage", "disk_util"])
+    device = 'dm-0'
 
     try:
-        while True:
+        while not cancel_signal.is_set():
             loop_start_time = time.monotonic()
 
             process_iostat_stream() # Update disk I/O data from the stream.
 
-            # Clear the terminal screen.
-            print("\033[H\033[J", end="")
+            if show_log:
+                print("\033[H\033[J", end="") # Clear the terminal screen.
 
             # Get and display Docker container statistics.
-            cpu_usage, mem_usage, docker_error = get_docker_stats(CONTAINER_NAME)
+            cpu_usage, mem_usage, docker_error = get_docker_stats(container_name)
             if docker_error:
-                print(f"CPU Usage: Error ({docker_error})")
-                print(f"RAM Usage: Error ({docker_error})")
+                cpu_usage = None
+                mem_usage = None
+
+            if show_log:
+                print(f"CPU usage: {cpu_usage or 'N/A'}")
+                print(f"RAM usage: {mem_usage or 'N/A'}")
+
+            disk_util = None
+
+            if device in latest_iostat_data:
+                try:
+                    disk_util = latest_iostat_data[device]
+                    if show_log:
+                        print(f"Disk util: {disk_util}%")
+                except ValueError:
+                    if show_log:
+                        print("Disk util: Awaiting valid data from iostat.")
             else:
-                print(f"CPU Usage: {cpu_usage}")
-                print(f"RAM Usage: {mem_usage}")
-            
-            # Display the latest disk I/O statistics.
-            if latest_iostat_data:
-                for device, util in sorted(latest_iostat_data.items()): # Sort for consistent order.
-                    print(f"disk {device} %util: {util}%")
-            else:
-                print("Disk %util: Awaiting data from iostat.") # Initial state or if iostat fails.
-            
+                if show_log:
+                    print("Disk util: Awaiting data from iostat.")
+
+            logger.csv_log(f"{cpu_usage},{mem_usage},{disk_util}%")
+
             # Calculate elapsed time and sleep to maintain the target refresh interval.
-            loop_end_time = time.monotonic()
-            elapsed_time = loop_end_time - loop_start_time
-            sleep_duration = UPDATE_INTERVAL - elapsed_time
-            if sleep_duration > 0:
-                time.sleep(sleep_duration)
+            time.sleep(max(0, UPDATE_INTERVAL - (time.monotonic() - loop_start_time)))
 
     except KeyboardInterrupt:
         print("\nMonitoring stopped by user.")
     except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}")
+        print(f"\nUNEXPECTED ERROR: {e}")
     finally:
-        # Ensure the iostat subprocess is terminated when the script exits.
-        if iostat_process and iostat_process.poll() is None: # Check if process is still running.
-            iostat_process.terminate()
-            try:
-                iostat_process.wait(timeout=1) # Wait briefly for graceful termination.
-            except subprocess.TimeoutExpired:
-                iostat_process.kill() # Force kill if it doesn't terminate.
-            print("iostat process stopped.")
+        shutdown_iostat_process()
+
+def shutdown_iostat_process():
+    # Ensure the iostat subprocess is terminated when the script exits.
+    if iostat_process and iostat_process.poll() is None: # Check if process is still running.
+        iostat_process.terminate()
+        try:
+            iostat_process.wait(timeout=1) # Wait briefly for graceful termination.
+        except subprocess.TimeoutExpired:
+            iostat_process.kill() # Force kill if it doesn't terminate.
+        print("iostat process stopped.")
+
+def stop_resource_monitoring(): cancel_signal.set()
+
+if __name__ == "__main__":
+    if not start_iostat_stream():
+        sys.exit("Failed to initialize iostat monitoring. Exiting.")
+    else:
+        monitor_resource_usage(show_log=True)
