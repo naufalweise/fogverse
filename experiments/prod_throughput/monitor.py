@@ -114,7 +114,7 @@ def get_docker_stats(container_name_or_id):
     mem = output[1] if len(output) > 1 else "N/A"
     return cpu, mem, None
 
-def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
+def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=True):
     logger = FogLogger(name=f"resource_usage_{int(time.time())}", csv_header=["timestamp", "cpu_usage", "ram_usage", "disk_util"])
     device = 'dm-0'
     resource_usage = []
@@ -155,7 +155,7 @@ def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
             # Check last 8 entries (or fewer if less available).
             window = resource_usage[-8:]
             recent_cpu_usage = [float(c.strip('%')) for _, c, _, _ in window if c is not None]
-            recent_mem_usage = [float(m.split('GiB')[0]) for _, _, m, _ in window if m and 'GiB' in m]
+            recent_mem_usage = [parse_mem(m) for _, _, m, _ in window if m]
             recent_disk_util = [float(d) for _, _, _, d in window if d is not None]
 
             if recent_cpu_usage and recent_mem_usage and recent_disk_util:
@@ -193,6 +193,14 @@ def shutdown_iostat_process():
             iostat_process.kill() # Force kill if it doesn't terminate.
         print("iostat process stopped.")
 
+def parse_mem(m):
+    # take the “used” part before the slash
+    used = m.split("/")[0].strip()
+    if used.endswith("GiB"):
+        return float(used[:-3])
+    if used.endswith("MiB"):
+        return float(used[:-3]) / 1024
+    raise ValueError(f"UNKNOWN UNIT: {used}")
 
 if __name__ == "__main__":
     if not start_iostat_stream():
