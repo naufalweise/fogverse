@@ -1,8 +1,11 @@
 import subprocess
 import sys
+import threading
 import time
 
+from concurrent.futures import ThreadPoolExecutor
 from experiments.constants import CLUSTER_ID, FIRST_CONTAINER, TOPIC_NAME
+from experiments.prod_throughput.clients import run_throughput_test
 from experiments.prod_throughput.monitor import monitor_resource_usage, start_iostat_stream
 
 def run(cmd, check=True, capture_output=False, **kwargs):
@@ -58,7 +61,20 @@ def main():
         sys.exit("Failed to initialize iostat monitoring. Exiting.")
     else:
         time.sleep(4)
-        monitor_resource_usage()
+
+        # Start resource monitoring in a separate thread (no return value).
+        monitor_thread = threading.Thread(target=monitor_resource_usage)
+        monitor_thread.start()
+
+        # Start throughput test in a thread and capture return value.
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(run_throughput_test)
+
+        # Wait for both to finish.
+        monitor_thread.join()
+        tp, tc = future.result()
+
+        print(f"Tp: {tp}, Tc: {tc}")
 
 if __name__ == "__main__":
     main()

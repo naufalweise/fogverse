@@ -1,3 +1,4 @@
+from statistics import mean
 import subprocess
 import threading
 import time
@@ -6,12 +7,16 @@ import select # For non-blocking I/O.
 import sys
 
 from experiments.constants import FIRST_CONTAINER
+from experiments.prod_throughput.clients import stop_client_data_flow
 from fogverse.logger.fog import FogLogger
-
-cancel_signal = threading.Event()
 
 # Configuration.
 UPDATE_INTERVAL = 1.0  # Desired update interval in seconds.
+
+# Thresholds (adjust if needed)
+CPU_USAGE_THRESHOLD = 80.0 # in %
+MEM_USAGE_THRESHOLD_GIB = 1.8 # in GiB
+DISK_UTIL_THRESHOLD = 0.92 # fraction (92%)
 
 # Globals for managing the continuous iostat process and its data.
 iostat_process = None
@@ -112,17 +117,16 @@ def get_docker_stats(container_name_or_id):
 def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
     logger = FogLogger(name=f"resource_usage_{int(time.time())}", csv_header=["timestamp", "cpu_usage", "ram_usage", "disk_util"])
     device = 'dm-0'
+    resource_usage = []
 
     try:
-        while not cancel_signal.is_set():
+        while True:
             loop_start_time = time.monotonic()
-
-            process_iostat_stream() # Update disk I/O data from the stream.
+            process_iostat_stream()
 
             if show_log:
-                print("\033[H\033[J", end="") # Clear the terminal screen.
+                print("\033[H\033[J", end="")  # Clear screen.
 
-            # Get and display Docker container statistics.
             cpu_usage, mem_usage, docker_error = get_docker_stats(container_name)
             if docker_error:
                 cpu_usage = None
@@ -133,7 +137,6 @@ def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
                 print(f"RAM usage: {mem_usage or 'N/A'}")
 
             disk_util = None
-
             if device in latest_iostat_data:
                 try:
                     disk_util = latest_iostat_data[device]
@@ -146,9 +149,28 @@ def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
                 if show_log:
                     print("Disk util: Awaiting data from iostat.")
 
-            logger.csv_log(f"{cpu_usage},{mem_usage},{disk_util}%")
+            now = time.time()
+            resource_usage.append((now, cpu_usage, mem_usage, disk_util))
 
-            # Calculate elapsed time and sleep to maintain the target refresh interval.
+            # Check last 8 entries (or fewer if less available).
+            window = resource_usage[-8:]
+            recent_cpu_usage = [float(c.strip('%')) for _, c, _, _ in window if c is not None]
+            recent_mem_usage = [float(m.split('GiB')[0]) for _, _, m, _ in window if m and 'GiB' in m]
+            recent_disk_util = [float(d) for _, _, _, d in window if d is not None]
+
+            if recent_cpu_usage and recent_mem_usage and recent_disk_util:
+                avg_cpu_usage = mean(recent_cpu_usage)
+                avg_mem_usage = mean(recent_mem_usage)
+                avg_disk_util = mean(recent_disk_util)
+
+                if (
+                    avg_cpu_usage >= CPU_USAGE_THRESHOLD or
+                    avg_mem_usage >= MEM_USAGE_THRESHOLD_GIB or
+                    avg_disk_util >= DISK_UTIL_THRESHOLD * 100  # since disk_util is a %.
+                ):
+                    stop_client_data_flow()
+                    break  # Exit the loop if threshold exceeded.
+
             time.sleep(max(0, UPDATE_INTERVAL - (time.monotonic() - loop_start_time)))
 
     except KeyboardInterrupt:
@@ -157,6 +179,9 @@ def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
         print(f"\nUNEXPECTED ERROR: {e}")
     finally:
         shutdown_iostat_process()
+
+        for _, cpu, mem, disk in resource_usage:
+            logger.csv_log(f"{cpu},{mem},{disk}%")
 
 def shutdown_iostat_process():
     # Ensure the iostat subprocess is terminated when the script exits.
@@ -168,7 +193,6 @@ def shutdown_iostat_process():
             iostat_process.kill() # Force kill if it doesn't terminate.
         print("iostat process stopped.")
 
-def stop_resource_monitoring(): cancel_signal.set()
 
 if __name__ == "__main__":
     if not start_iostat_stream():
