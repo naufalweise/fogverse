@@ -74,7 +74,8 @@ def main():
         monitor_thread.join()
         tp, tc = future.result()
 
-        print(f"Tp: {tp}, Tc: {tc}")
+        print(f"Production Throughput per Partition: {tp} MiB/s")
+        print(f"Consumption Throughput per Partition: {tc} MiB/s")
 
 if __name__ == "__main__":
     main()

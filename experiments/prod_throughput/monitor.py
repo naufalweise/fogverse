@@ -1,6 +1,5 @@
 from statistics import mean
 import subprocess
-import threading
 import time
 import os
 import select # For non-blocking I/O.
@@ -12,11 +11,12 @@ from fogverse.logger.fog import FogLogger
 
 # Configuration.
 UPDATE_INTERVAL = 1.0  # Desired update interval in seconds.
+SLIDING_WINDOW_SIZE = 8  # Number of samples to consider for average calculation.
 
-# Thresholds (adjust if needed)
-CPU_USAGE_THRESHOLD = 80.0 # in %
-MEM_USAGE_THRESHOLD_GIB = 1.8 # in GiB
-DISK_UTIL_THRESHOLD = 0.92 # fraction (92%)
+# Thresholds (adjust if needed).
+CPU_USAGE_THRESHOLD = 75.0 # in %.
+MEM_USAGE_THRESHOLD = 80.0 # in %.
+DISK_UTIL_THRESHOLD = 0.92 # in fraction.
 
 # Globals for managing the continuous iostat process and its data.
 iostat_process = None
@@ -86,7 +86,7 @@ def process_iostat_stream():
                     current_parsing_block[device_name] = percent_util
                 except (IndexError, ValueError):
                     pass # Ignore malformed lines within a device stats block.
-    
+
     # Non-blockingly check iostat's stderr for any error messages.
     if iostat_process.poll() is None and select.select([iostat_process.stderr], [], [], 0)[0]:
         error_output = iostat_process.stderr.readline()
@@ -94,7 +94,6 @@ def process_iostat_stream():
             # Silently consume or log minimally to avoid cluttering the display.
             # print(f"iostat stderr: {error_output.strip()}", file=sys.stderr)
             pass
-
 
 def get_docker_stats(container_name_or_id):
     # Fetches CPU and Memory usage for the specified Docker container.
@@ -108,68 +107,60 @@ def get_docker_stats(container_name_or_id):
         return None, None, "Docker command not found."
     except subprocess.TimeoutExpired:
         return None, None, "Docker stats command timed out."
-    
-    output = stdout.strip().split('\n')
-    cpu = output[0] if len(output) > 0 else "N/A"
-    mem = output[1] if len(output) > 1 else "N/A"
-    return cpu, mem, None
 
-def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=True):
-    logger = FogLogger(name=f"resource_usage_{int(time.time())}", csv_header=["timestamp", "cpu_usage", "ram_usage", "disk_util"])
+    lines = stdout.strip().split('\n')
+    try:
+        cpu_usage = lines[0]
+        mem_usage = lines[2]  # mem_usage is confirmed to be at index 2.
+    except IndexError:
+        return None, None, "Unexpected docker stats output format."
+
+    return cpu_usage, mem_usage, None
+
+def monitor_resource_usage(container_name=FIRST_CONTAINER, show_log=False):
+    logger = FogLogger(name=f"resource_usage_{int(time.time())}", csv_header=["timestamp", "cpu_usage", "mem_usage", "disk_util"])
     device = 'dm-0'
     resource_usage = []
 
     try:
         while True:
+            if show_log: print("\033[H\033[J", end="")  # Clear screen.
+
             loop_start_time = time.monotonic()
             process_iostat_stream()
 
-            if show_log:
-                print("\033[H\033[J", end="")  # Clear screen.
-
-            cpu_usage, mem_usage, docker_error = get_docker_stats(container_name)
-            if docker_error:
-                cpu_usage = None
-                mem_usage = None
+            cpu_usage, mem_usage, _ = get_docker_stats(container_name)
 
             if show_log:
-                print(f"CPU usage: {cpu_usage or 'N/A'}")
-                print(f"RAM usage: {mem_usage or 'N/A'}")
+                print(f"cpu_usage: {cpu_usage or 'N/A'}")
+                print(f"mem_usage: {mem_usage or 'N/A'}")
 
             disk_util = None
-            if device in latest_iostat_data:
-                try:
-                    disk_util = latest_iostat_data[device]
-                    if show_log:
-                        print(f"Disk util: {disk_util}%")
-                except ValueError:
-                    if show_log:
-                        print("Disk util: Awaiting valid data from iostat.")
-            else:
-                if show_log:
-                    print("Disk util: Awaiting data from iostat.")
+            try:
+                disk_util = latest_iostat_data[device]
+                if show_log: print(f"Disk util: {disk_util}%")
+            except Exception as _:
+                if show_log: print("Disk util: N/A")
 
             now = time.time()
+
+            cpu_usage = float(cpu_usage.strip('%')) if cpu_usage else None
+            mem_usage = float(mem_usage.strip('%')) if mem_usage else None
+            disk_util = float(disk_util) if disk_util else None
+
             resource_usage.append((now, cpu_usage, mem_usage, disk_util))
 
-            # Check last 8 entries (or fewer if less available).
-            window = resource_usage[-8:]
-            recent_cpu_usage = [float(c.strip('%')) for _, c, _, _ in window if c is not None]
-            recent_mem_usage = [parse_mem(m) for _, _, m, _ in window if m]
-            recent_disk_util = [float(d) for _, _, _, d in window if d is not None]
+            # Check last few entries.
+            window = resource_usage[-SLIDING_WINDOW_SIZE:]
+            cpu_usages, mem_usages, disk_utils = zip(*[(c, m, d) for _, c, m, d in window if c and m and d])
 
-            if recent_cpu_usage and recent_mem_usage and recent_disk_util:
-                avg_cpu_usage = mean(recent_cpu_usage)
-                avg_mem_usage = mean(recent_mem_usage)
-                avg_disk_util = mean(recent_disk_util)
-
-                if (
-                    avg_cpu_usage >= CPU_USAGE_THRESHOLD or
-                    avg_mem_usage >= MEM_USAGE_THRESHOLD_GIB or
-                    avg_disk_util >= DISK_UTIL_THRESHOLD * 100  # since disk_util is a %.
-                ):
-                    stop_client_data_flow()
-                    break  # Exit the loop if threshold exceeded.
+            if (
+                mean(cpu_usages) >= CPU_USAGE_THRESHOLD or
+                mean(mem_usages) >= MEM_USAGE_THRESHOLD or
+                mean(disk_utils) >= DISK_UTIL_THRESHOLD * 100  # since disk_util is a %.
+            ):
+                stop_client_data_flow()
+                break  # Exit the loop if threshold exceeded.
 
             time.sleep(max(0, UPDATE_INTERVAL - (time.monotonic() - loop_start_time)))
 
@@ -192,15 +183,6 @@ def shutdown_iostat_process():
         except subprocess.TimeoutExpired:
             iostat_process.kill() # Force kill if it doesn't terminate.
         print("iostat process stopped.")
-
-def parse_mem(m):
-    # take the “used” part before the slash
-    used = m.split("/")[0].strip()
-    if used.endswith("GiB"):
-        return float(used[:-3])
-    if used.endswith("MiB"):
-        return float(used[:-3]) / 1024
-    raise ValueError(f"UNKNOWN UNIT: {used}")
 
 if __name__ == "__main__":
     if not start_iostat_stream():

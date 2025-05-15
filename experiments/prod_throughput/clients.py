@@ -12,15 +12,13 @@ consume_bytes = 0
 
 produce_lock = threading.Lock()
 consume_lock = threading.Lock()
-cancel_signal = threading.Event()
 
-target_tp_mb = 20
+target_tp_mib = 20  # Target throughput in MiB/s.
 load_steps = []
 actual_tp = []
 actual_tc = []
 
 stop_all = threading.Event()
-
 
 def delivery_report(err, msg):
     global produce_bytes, produce_count
@@ -29,18 +27,16 @@ def delivery_report(err, msg):
             produce_bytes += len(msg.value())
             produce_count += 1
 
-
 def produce_loop():
-    global target_tp_mb
+    global target_tp_mib
     p = Producer({'bootstrap.servers': BROKER_ADDRESS})
     while not stop_all.is_set():
-        current_tp = target_tp_mb
+        current_tp = target_tp_mib
         interval = (MESSAGE_SIZE / 1024**2) / current_tp
         value = bytes(random.getrandbits(8) for _ in range(MESSAGE_SIZE))
         p.produce(TOPIC_NAME, value=value, callback=delivery_report)
         p.poll(0)
         time.sleep(interval)
-
 
 def consume_loop():
     global consume_bytes, consume_count
@@ -58,7 +54,6 @@ def consume_loop():
             consume_bytes += len(msg.value())
             consume_count += 1
 
-
 def monitor_loop():
     global produce_bytes, consume_bytes
     while not stop_all.is_set():
@@ -73,36 +68,29 @@ def monitor_loop():
         actual_tp.append((timestamp, tp))
         actual_tc.append((timestamp, tc))
 
-
-def increase_tp_loop():
-    global target_tp_mb
-    while not cancel_signal.is_set():
+def increase_load_loop():
+    global target_tp_mib
+    while not stop_all.is_set():
         timestamp = time.time()
-        load_steps.append((timestamp, target_tp_mb))
+        load_steps.append((timestamp, target_tp_mib))
         time.sleep(8)
-        target_tp_mb += 4
-    # Final step timestamp when limit reached.
-    load_steps.append((time.time(), target_tp_mb))
+        target_tp_mib += 4
 
-
-def stop_client_data_flow(): cancel_signal.set()
-
+def stop_client_data_flow(): stop_all.set()
 
 def run_throughput_test():
     threads = [
         threading.Thread(target=produce_loop),
         threading.Thread(target=consume_loop),
         threading.Thread(target=monitor_loop),
-        threading.Thread(target=increase_tp_loop)
+        threading.Thread(target=increase_load_loop)
     ]
 
     for t in threads:
         t.start()
 
-    while not cancel_signal.is_set():
-        time.sleep(0.5)  # Wait until signal externally set.
+    stop_all.wait()  # Wait for the stop signal.
 
-    stop_all.set()
     for t in threads:
         t.join(timeout=2)
 
