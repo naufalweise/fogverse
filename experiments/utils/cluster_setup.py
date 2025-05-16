@@ -1,5 +1,5 @@
 import time
-from experiments.constants import BROKER_ADDRESS, TOPIC_NAME
+from experiments.constants import BROKER_ADDRESS, NODE_PREFIX, TOPIC_NAME
 from experiments.utils.generate_jolokia_wrapper import generate_jolokia_wrapper
 from experiments.utils.run_cmd import run_cmd
 
@@ -10,6 +10,15 @@ def docker_rm_all_with_label(logger, cluster_id):
     logger.log_all(f"Removing all Docker containers and volumes with cluster ID '{cluster_id}'...")
     run_cmd(f'docker ps -a --filter "label=cluster_id={cluster_id}" -q | xargs -r docker rm -f', capture_output=True)
     run_cmd(f'docker volume ls --filter "label=cluster_id={cluster_id}" -q | xargs -r docker volume rm', capture_output=True)
+
+    # Remove images.
+    result = run_cmd('docker images --format "{{.Repository}} {{.ID}}"', capture_output=True)
+    for line in result.stdout.strip().split('\n'):
+        if line.startswith(f'experiments-{NODE_PREFIX}'):
+            repo, image_id = line.split()
+            logger.log_all(f"Removing Docker image {repo} ({image_id})...")
+            run_cmd(f'docker rmi {image_id}', capture_output=True)
+
     logger.log_all(f"Removal of Docker containers and volumes for cluster ID '{cluster_id}' completed.")
 
 def generate_compose(logger, num_brokers=1):

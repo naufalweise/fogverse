@@ -1,11 +1,11 @@
 import concurrent.futures
-import os
 import re
 import subprocess
 import time
 
 from experiments.constants import BROKER_ADDRESS, CLUSTER_ID, FIRST_CONTAINER, NUM_RECORDS, TOPIC_NAME
-from experiments.utils.cluster_setup import docker_rm_all_with_label, setup_experiment_env
+from experiments.utils.cleanup import cleanup
+from experiments.utils.cluster_setup import setup_experiment_env
 from experiments.utils.generate_payload import generate_payload
 from experiments.utils.run_cmd import run_cmd
 from fogverse.logger.fog import FogLogger
@@ -18,7 +18,7 @@ def run_producer_test(num_records=NUM_RECORDS):
         "kafka/bin/kafka-producer-perf-test.sh "
         f"--topic {TOPIC_NAME} "
         f"--num-records {num_records} "
-        "--payload-file payload.txt "
+        "--payload-file experiments/payload.txt "
         "--throughput -1 "
         f"--producer-props bootstrap.servers={BROKER_ADDRESS}"
     )
@@ -111,15 +111,7 @@ def main():
     generate_payload(logger)
     run_performance_tests()
 
-    logger.log_all("Cleaning up...")
-
-    # Remove Docker containers and volumes associated with the cluster ID.
-    docker_rm_all_with_label(logger, CLUSTER_ID)
-
-    if os.path.exists('payload.txt'):
-        os.remove('payload.txt')
-
-    logger.log_all("Cleanup completed.")
+    cleanup(logger, CLUSTER_ID)
 
 if __name__ == "__main__":
     main()
