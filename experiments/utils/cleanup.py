@@ -1,0 +1,2 @@
+def cleanup(logger):
+    pass

@@ -5,8 +5,9 @@ import subprocess
 import time
 
 from experiments.constants import BROKER_ADDRESS, CLUSTER_ID, FIRST_CONTAINER, NUM_RECORDS, TOPIC_NAME
-from experiments.utils import generate_payload, run_cmd
-from experiments.utils.cluster_setup import _docker_rm_all_with_label, setup_experiment_env
+from experiments.utils.cluster_setup import docker_rm_all_with_label, setup_experiment_env
+from experiments.utils.generate_payload import generate_payload
+from experiments.utils.run_cmd import run_cmd
 from fogverse.logger.fog import FogLogger
 
 logger = FogLogger(f"throughput_{int(time.time())}")
@@ -111,10 +112,13 @@ def main():
     run_performance_tests()
 
     logger.log_all("Cleaning up...")
+
     # Remove Docker containers and volumes associated with the cluster ID.
-    _docker_rm_all_with_label(CLUSTER_ID)
+    docker_rm_all_with_label(logger, CLUSTER_ID)
+
     if os.path.exists('payload.txt'):
         os.remove('payload.txt')
+
     logger.log_all("Cleanup completed.")
 
 if __name__ == "__main__":
