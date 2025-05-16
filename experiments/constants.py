@@ -8,8 +8,7 @@ VOLUME_PREFIX = "kafka_test_data"
 TOPIC_NAME = "test-topic"
 NODE_ID_BASE = 0
 BROKER_ADDRESS = "localhost:9092"
-MESSAGE_SIZE = 16_384  # 16 KiB.
 
 # Experiment constants.
 FIRST_CONTAINER = f"{CONTAINER_PREFIX}-{NODE_ID_BASE}"
-NUM_RECORDS = 65_536 # 2**16.
+NUM_RECORDS = 65_536  # This is arbitrary.

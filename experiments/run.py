@@ -77,7 +77,7 @@ def generate_payload_file(filepath='payload.txt',min_kb=1,max_kb=100,step_kb=1,c
     print(f"Generated {filepath} successfully.")
 
 def run_producer_test(num_records=NUM_RECORDS):
-    # Run the Kafka producer performance test using payload.txt.
+    # Run the Kafka producer performance test using payload.txt and track progress.
     cmd = (
         "kafka/bin/kafka-producer-perf-test.sh "
         f"--topic {TOPIC_NAME} "
@@ -86,9 +86,43 @@ def run_producer_test(num_records=NUM_RECORDS):
         "--throughput -1 "
         f"--producer-props bootstrap.servers={BROKER_ADDRESS}"
     )
-    print("Starting producer performance test...")
-    result = run(cmd, capture_output=True)
-    return result.stdout
+    print(f"Running producer performance test with {num_records} records...")
+
+    # Use Popen to capture output line by line in real-time.
+    process = subprocess.Popen(
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        universal_newlines=True
+    )
+
+    output_lines = []
+    last_percentage = -1  # Track last printed percentage to avoid duplicates.
+
+    # Read output line by line.
+    for line in process.stdout:
+        output_lines.append(line)
+        # Parse lines that contain "records sent".
+        match = re.match(r'(\d+) records sent,', line)
+        if match:
+            records_sent = int(match.group(1))
+            percentage = (records_sent * 100) // num_records  # Integer division for no decimals.
+            if percentage > last_percentage:
+                print(f"{percentage}% progress completed.")
+                last_percentage = percentage
+
+    # Wait for the process to complete and capture any errors.
+    process.wait()
+    if process.returncode != 0:
+        error_output = process.stderr.read()
+        print(f"Producer test failed: {error_output}")
+        raise subprocess.CalledProcessError(process.returncode, cmd)
+
+    # Combine all output lines for parsing.
+    return "".join(output_lines)
 
 def run_consumer_test(num_records=NUM_RECORDS):
     # Run the Kafka consumer performance test.
@@ -99,7 +133,7 @@ def run_consumer_test(num_records=NUM_RECORDS):
         f"--bootstrap-server {BROKER_ADDRESS} "
         "--show-detailed-stats"
     )
-    print("Starting consumer performance test...")
+    print(f"Running consumer performance test with {num_records} records...")
     result = run(cmd, capture_output=True)
     return result.stdout
 
