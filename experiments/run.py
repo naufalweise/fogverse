@@ -4,6 +4,9 @@ import os
 import concurrent.futures
 import re
 from experiments.constants import BROKER_ADDRESS, CLUSTER_ID, FIRST_CONTAINER, NUM_RECORDS, TOPIC_NAME
+from fogverse.logger.fog import FogLogger
+
+logger = FogLogger(f"throughput_{int(time.time())}")
 
 def run(cmd, check=True, capture_output=False, **kwargs):
     try:
@@ -22,30 +25,30 @@ def docker_rm_all_with_label(cluster_id):
 
 def generate_compose():
     # Generate the Docker Compose configuration file.
-    print("Generating Docker Compose configuration...")
+    logger.log_all("Generating Docker Compose configuration...")
     run('python -m experiments.generate_compose', capture_output=True)
-    print("Docker Compose configuration generated successfully.")
+    logger.log_all("Docker Compose configuration generated successfully.")
 
 def docker_compose_up():
     # Start the Docker Compose services.
-    print("Starting Kafka services...")
+    logger.log_all("Starting Kafka services...")
     run('docker compose -f ./experiments/docker-compose.yml up -d', capture_output=True)
-    print("Kafka services started.")
+    logger.log_all("Kafka services started.")
 
 def wait_for_container_up(container_name):
     # Wait until the specified container is running.
-    print(f"Waiting for container {container_name} to start...")
+    logger.log_all(f"Waiting for container {container_name} to start...")
     while True:
         result = run(f'docker ps --filter "name={container_name}" --format "{{{{.Status}}}}"', capture_output=True)
         status = result.stdout.strip()
         if status.startswith("Up"):
-            print(f"Container {container_name} is up and running.")
+            logger.log_all(f"Container {container_name} is up and running.")
             break
         time.sleep(2)
 
 def create_topic(num_partitions=1):
     # Create a Kafka topic with the specified number of partitions.
-    print(f"Creating Kafka topic '{TOPIC_NAME}'...")
+    logger.log_all(f"Creating Kafka topic '{TOPIC_NAME}' with {num_partitions} partitions...")
     cmd = (
         "kafka/bin/kafka-topics.sh "
         "--create "
@@ -55,26 +58,26 @@ def create_topic(num_partitions=1):
         f"--bootstrap-server {BROKER_ADDRESS}"
     )
     run(cmd, capture_output=True)
-    print(f"Kafka topic '{TOPIC_NAME}' created successfully.")
+    logger.log_all(f"Kafka topic '{TOPIC_NAME}' created successfully.")
 
 def wait_for_topic_ready():
     # Wait until the Kafka topic is ready.
-    print(f"Waiting for topic '{TOPIC_NAME}' to be ready...")
+    logger.log_all(f"Waiting for topic '{TOPIC_NAME}' to be ready...")
     while True:
         result = run(f'kafka/bin/kafka-topics.sh --list --bootstrap-server {BROKER_ADDRESS}', capture_output=True)
         topics = result.stdout.strip().splitlines()
         if TOPIC_NAME in topics:
-            print(f"Topic '{TOPIC_NAME}' is ready.")
+            logger.log_all(f"Topic '{TOPIC_NAME}' is ready.")
             break
         time.sleep(2)
 
 def generate_payload_file(filepath='payload.txt',min_kb=1,max_kb=100,step_kb=1,char='*'):
-    print(f"Generating payload file from {min_kb}KB to {max_kb}KB in steps of {step_kb}KB...")
+    logger.log_all(f"Generating payload file from {min_kb}KB to {max_kb}KB in steps of {step_kb}KB...")
     with open(filepath, 'w') as f:
         for kb in range(min_kb, max_kb + 1, step_kb):
             payload = char * (kb * 1024)
             f.write(payload + '\n')  # Each payload on a new line.
-    print(f"Generated {filepath} successfully.")
+    logger.log_all(f"Generated {filepath} successfully.")
 
 def run_producer_test(num_records=NUM_RECORDS):
     # Run the Kafka producer performance test using payload.txt and track progress.
@@ -86,43 +89,32 @@ def run_producer_test(num_records=NUM_RECORDS):
         "--throughput -1 "
         f"--producer-props bootstrap.servers={BROKER_ADDRESS}"
     )
-    print(f"Running producer performance test with {num_records} records...")
+    logger.log_all(f"Running producer performance test with {num_records} records...")
 
-    # Use Popen to capture output line by line in real-time.
-    process = subprocess.Popen(
-        cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1,
-        universal_newlines=True
-    )
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    output = []
 
-    output_lines = []
-    last_percentage = -1  # Track last printed percentage to avoid duplicates.
-
-    # Read output line by line.
+    running_total = 0
     for line in process.stdout:
-        output_lines.append(line)
-        # Parse lines that contain "records sent".
-        match = re.match(r'(\d+) records sent,', line)
-        if match:
-            records_sent = int(match.group(1))
-            percentage = (records_sent * 100) // num_records  # Integer division for no decimals.
-            if percentage > last_percentage:
-                print(f"{percentage}% progress completed.")
-                last_percentage = percentage
+        line = line.strip()
+        output.append(line)
 
-    # Wait for the process to complete and capture any errors.
+        match = re.match(r"(\d+)\s+records sent", line)
+        if match:
+            this_count = int(match.group(1))
+
+            if this_count == num_records:
+                logger.log_all("100% progress completed.")
+            else:
+                running_total += this_count
+                percent = int((running_total / num_records) * 100)
+                logger.log_all(f"{percent}% progress completed.")
+
     process.wait()
     if process.returncode != 0:
-        error_output = process.stderr.read()
-        print(f"Producer test failed: {error_output}")
         raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    # Combine all output lines for parsing.
-    return "".join(output_lines)
+    return "\n".join(output)
 
 def run_consumer_test(num_records=NUM_RECORDS):
     # Run the Kafka consumer performance test.
@@ -133,7 +125,7 @@ def run_consumer_test(num_records=NUM_RECORDS):
         f"--bootstrap-server {BROKER_ADDRESS} "
         "--show-detailed-stats"
     )
-    print(f"Running consumer performance test with {num_records} records...")
+    logger.log_all(f"Running consumer performance test with {num_records} records...")
     result = run(cmd, capture_output=True)
     return result.stdout
 
@@ -177,10 +169,8 @@ def run_performance_tests():
     Tp = parse_prod_perf_test(producer_output)
     Tc = parse_consumer_perf_test(consumer_output)
     
-    print("-" * 40)
-    print(f"Producer Throughput (Tp): {Tp} MB/s")
-    print(f"Consumer Throughput (Tc): {Tc} MB/s")
-    print("-" * 40)
+    logger.log_all(f"Producer Throughput (Tp): {Tp} MB/s")
+    logger.log_all(f"Consumer Throughput (Tc): {Tc} MB/s")
 
 def main():
     # Set up and start the Kafka cluster, then run performance tests.
@@ -195,11 +185,11 @@ def main():
     generate_payload_file()
     run_performance_tests()
     
-    print("Cleaning up...")
+    logger.log_all("Cleaning up...")
     docker_rm_all_with_label(CLUSTER_ID)
     if os.path.exists('payload.txt'):
         os.remove('payload.txt')
-    print("Cleanup completed.")
+    logger.log_all("Cleanup completed.")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 DEFAULT_NUM_PARTITIONS = 1
-DEFAULT_FMT = "[%(asctime)s][%(levelname)s][%(name)s] %(message)s"
+DEFAULT_FMT = "[%(asctime)s] %(message)s"
 
 # Numbers are arbitrary, but must be unique.
 FOGV_STDOUT = 100
