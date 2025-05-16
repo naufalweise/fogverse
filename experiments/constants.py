@@ -3,6 +3,8 @@ CLUSTER_ID = "test-cluster"
 NODE_PREFIX = "kafka-node"
 CONTAINER_PREFIX = "test-container"
 VOLUME_PREFIX = "kafka_test_data"
+JOLOKIA_VERSION = "1.7.2"  # Or choose the latest stable version.
+JOLOKIA_PORT_INTERNAL = 8778  # Port Jolokia listens on *inside* the container.
 
 # Kafka cluster configuration constants.
 TOPIC_NAME = "test-topic"

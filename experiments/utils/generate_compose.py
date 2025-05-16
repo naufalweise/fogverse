@@ -1,9 +1,6 @@
 import sys
 
-from experiments.constants import CLUSTER_ID, CONTAINER_PREFIX, NODE_PREFIX, VOLUME_PREFIX
-
-JOLOKIA_VERSION = "1.7.2"  # Or choose the latest stable version
-JOLOKIA_PORT_INTERNAL = 8778 # Port Jolokia listens on *inside* the container
+from experiments.constants import CLUSTER_ID, CONTAINER_PREFIX, JOLOKIA_PORT_INTERNAL, JOLOKIA_VERSION, NODE_PREFIX, VOLUME_PREFIX
 
 def generate_docker_compose(n, base_port=9090):
     """
@@ -26,12 +23,12 @@ def generate_docker_compose(n, base_port=9090):
             'internal': base_port + (10 * i),
             'external': base_port + (10 * i) + 2,
             'controller': base_port + (10 * i) + 4,
-            'jolokia_host': base_port + (10 * i) + 6 # Host port mapped to Jolokia
+            'jolokia_host': base_port + (10 * i) + 6
         }
 
-        # Preserve existing KAFKA_OPTS and append Jolokia agent
-        # The command will handle the download and setting of KAFKA_OPTS
-        
+        # Appends the Jolokia agent to KAFKA_OPTS, preserving existing values.
+        # Downloads the agent if missing, installing curl if needed via microdnf or apt-get.
+        # Falls back to an alternate URL on failure and skips download if agent is already present.
         jolokia_download_and_run_script = f"""\
 bash -c "
   echo 'Node {node_id}: Checking for curl...'
@@ -54,7 +51,7 @@ bash -c "
       https://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-jvm/{JOLOKIA_VERSION}/jolokia-jvm-{JOLOKIA_VERSION}-agent.jar
     if [ $$? -ne 0 ] || [ ! -s $$JOLOKIA_AGENT_PATH ]; then
       echo 'Node {node_id}: Failed to download Jolokia agent.' >&2
-      # Try an alternative URL if the primary fails (e.g., from Maven Central directly)
+      # Try an alternative URL if the primary fails (e.g., from Maven Central directly).
       echo 'Node {node_id}: Trying alternative download from Maven Central...'
       curl -L -s -o $$JOLOKIA_AGENT_PATH \\
         https://repo1.maven.org/maven2/org/jolokia/jolokia-jvm/{JOLOKIA_VERSION}/jolokia-jvm-{JOLOKIA_VERSION}-agent.jar
@@ -76,7 +73,7 @@ bash -c "
   
   export KAFKA_OPTS=\\\"$${{KAFKA_OPTS:-}} -javaagent:$$JOLOKIA_AGENT_PATH=port={JOLOKIA_PORT_INTERNAL},host=0.0.0.0,discoveryEnabled=false\\\"  echo \\\"Node {node_id}: Augmented KAFKA_OPTS: $$KAFKA_OPTS\\\"
 
-  # Execute the original Kafka entrypoint/command
+  # Execute the original Kafka entrypoint/command.
   /etc/confluent/docker/run
 "
 """
@@ -102,28 +99,28 @@ bash -c "
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
       KAFKA_CONTROLLER_QUORUM_VOTERS: "{quorum_voters}"
       KAFKA_LOG_DIRS: "/var/lib/kafka/data"
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" # Good for testing
-      KAFKA_DELETE_TOPIC_ENABLE: "true" # Good for cleaning up test topics
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "{min(n, 3)}" # Adjusted to min(n,3)
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "{min(n, 3)}" # Adjusted
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "{max(1, min(n, 3) -1 if n > 1 else 1)}" # Adjusted
-      # KAFKA_OPTS: "" # Initial KAFKA_OPTS can be set here if needed, command script will append
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "{min(n, 3)}"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "{min(n, 3)}"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "{max(1, min(n, 3) -1 if n > 1 else 1)}"
+      # KAFKA_OPTS: "" # Initial KAFKA_OPTS can be set here if needed, command script will append.
     labels:
       cluster_id: "{CLUSTER_ID}"
     ports:
       - "{ports['internal']}:{ports['internal']}"
       - "{ports['external']}:{ports['external']}"
       - "{ports['controller']}:{ports['controller']}"
-      - "{ports['jolokia_host']}:{JOLOKIA_PORT_INTERNAL}" # Map Jolokia port
+      - "{ports['jolokia_host']}:{JOLOKIA_PORT_INTERNAL}"
     volumes:
       - {VOLUME_PREFIX}_{node_id}:/var/lib/kafka/data
     mem_limit: 2g 
     cpus: 1.0
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:{JOLOKIA_PORT_INTERNAL}/jolokia/read/kafka.server:type=BrokerState/BrokerState || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      interval: 8s
+      timeout: 4s
+      retries: 8
       start_period: 20s
 
 """
@@ -137,15 +134,6 @@ def indent_string(text, num_spaces):
 
 if __name__ == "__main__":
     num_brokers = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    output_file = "docker-compose.yml" #  Was "experiments/docker-compose.yml"
 
-    # Create experiments directory if it doesn't exist
-    # import os
-    # os.makedirs("experiments", exist_ok=True)
-    
-    with open(output_file, "w") as f:
+    with open("experiments/docker-compose.yml", "w") as f:
         f.write(generate_docker_compose(num_brokers))
-
-    print(f"Generated {output_file} with {num_brokers} Kafka brokers.")
-    print(f"Jolokia will be accessible on host ports ending with ...6 (e.g., 9096, 9106, ... for brokers 0, 2, ... respectively).")
-    print(f"Internal Jolokia port in containers: {JOLOKIA_PORT_INTERNAL}")
