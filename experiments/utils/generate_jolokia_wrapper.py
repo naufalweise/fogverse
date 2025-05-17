@@ -1,6 +1,13 @@
 from experiments.constants import JOLOKIA_AGENT_PATH, JOLOKIA_VERSION
 
 def generate_jolokia_wrapper():
+    # This script is used to create a wrapper for the Kafka entrypoint script
+    # to ensure that the Jolokia agent is downloaded and configured correctly.
+    # It checks for the presence of curl, installs it if necessary,
+    # and then downloads the Jolokia agent if it is not already present.
+    # The script also augments the KAFKA_OPTS environment variable to include
+    # the Jolokia agent configuration.
+    # Finally, it hands over to the original entrypoint script.
     script = f"""#!/bin/bash
 
 echo "Node 0: Checking for curl..."
@@ -32,7 +39,7 @@ fi
 export KAFKA_OPTS="${{KAFKA_OPTS:-}} -javaagent:$JOLOKIA_AGENT_PATH=port=8778,host=0.0.0.0,discoveryEnabled=false"
 echo "Node 0: Augmented KAFKA_OPTS: $KAFKA_OPTS"
 
-# Finally hand over to the original entrypoint.
+# Finally hand over to the original entrypoint script.
 exec /etc/confluent/docker/run "$@"
 """
     with open("experiments/jolokia-wrapper.sh", "w") as f:

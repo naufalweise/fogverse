@@ -14,5 +14,4 @@ NODE_ID_BASE = 0
 BROKER_ADDRESS = "localhost:9092"
 
 # Experiment constants.
-FIRST_CONTAINER = f"{CONTAINER_PREFIX}-{NODE_ID_BASE}"
 NUM_RECORDS = 65_536  # This is arbitrary.

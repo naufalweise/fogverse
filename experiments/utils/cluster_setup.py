@@ -35,19 +35,19 @@ def docker_compose_up(logger):
     run_cmd('docker compose -f ./experiments/docker-compose.yml up -d', capture_output=True)
     logger.log_all("Kafka services started.")
 
-def wait_for_container_up(logger, container_names):
-    # Wait for the specified Docker containers to be up and running.
-    # This is done by checking the status of each container.
-    # The function will keep checking until the container is up.
-    for container_name in container_names:
-        logger.log_all(f"Waiting for container {container_name} to start...")
-        while True:
-            result = run_cmd(f'docker ps --filter "name={container_name}" --format "{{{{.Status}}}}"', capture_output=True)
-            status = result.stdout.strip()
-            if status.startswith("Up"):
-                logger.log_all(f"Container {container_name} is up and running.")
-                break
-            time.sleep(2)
+def wait_labeled_containers(logger, cluster_id):
+    # Wait for all containers with the given cluster_id label to be up.
+    logger.log_all(f"Waiting for containers with cluster ID '{cluster_id}' to start...")
+    while True:
+        result = run_cmd(
+            f'docker ps --filter "label=cluster_id={cluster_id}" --format "{{{{.Status}}}}"',
+            capture_output=True
+        )
+        statuses = result.stdout.strip().splitlines()
+
+        if statuses and all(s.startswith("Up") for s in statuses):
+            logger.log_all(f"All containers with cluster ID '{cluster_id}' are up and running.")
+            break
 
 def create_topic(logger, num_partitions=1):
     # Create a Kafka topic with the specified number of partitions.
@@ -77,12 +77,12 @@ def wait_for_topic_ready(logger):
             break
         time.sleep(2)
 
-def setup_experiment_env(logger, cluster_id, container_names, num_brokers=1, num_partitions=1):
+def setup_experiment_env(logger, cluster_id, num_brokers=1, num_partitions=1):
     # Set up the full experiment environment.
     docker_rm_all_with_label(logger, cluster_id)
     generate_compose(logger, num_brokers)
     generate_jolokia_wrapper()
     docker_compose_up(logger)
-    wait_for_container_up(logger, container_names)
+    wait_labeled_containers(logger, cluster_id)
     create_topic(logger, num_partitions)
     wait_for_topic_ready(logger)

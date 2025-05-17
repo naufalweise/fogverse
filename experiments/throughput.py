@@ -3,7 +3,7 @@ import re
 import subprocess
 import time
 
-from experiments.constants import BROKER_ADDRESS, CLUSTER_ID, FIRST_CONTAINER, NUM_RECORDS, TOPIC_NAME
+from experiments.constants import BROKER_ADDRESS, CLUSTER_ID, NUM_RECORDS, TOPIC_NAME
 from experiments.utils.cleanup import cleanup
 from experiments.utils.cluster_setup import setup_experiment_env
 from experiments.utils.generate_payload import generate_payload
@@ -20,7 +20,7 @@ def run_producer_test(num_records=NUM_RECORDS):
         f"--num-records {num_records} "
         "--payload-file experiments/payload.txt "
         "--throughput -1 "
-        f"--producer-props bootstrap.servers={BROKER_ADDRESS}"
+        f"--producer-props acks=all bootstrap.servers={BROKER_ADDRESS}"
     )
     logger.log_all(f"Running producer performance test with {num_records} records...")
 
@@ -106,7 +106,7 @@ def run_performance_tests():
     logger.log_all(f"Consumer Throughput (Tc): {Tc} MB/s")
 
 def main():
-    setup_experiment_env(logger, CLUSTER_ID, [FIRST_CONTAINER])    
+    setup_experiment_env(logger, CLUSTER_ID)    
 
     generate_payload(logger)
     run_performance_tests()

@@ -77,4 +77,3 @@ if __name__ == "__main__":
         f.write(generate_docker_compose(n))
 
     print(f"Generated docker-compose.yml with {n} Kafka brokers.")
-  
