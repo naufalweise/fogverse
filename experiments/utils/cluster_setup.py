@@ -10,6 +10,7 @@ def docker_rm_all_with_label(logger, cluster_id):
     logger.log_all(f"Removing all Docker containers and volumes with cluster ID '{cluster_id}'...")
     run_cmd(f'docker ps -a --filter "label=cluster_id={cluster_id}" -q | xargs -r docker rm -f', capture_output=True)
     run_cmd(f'docker volume ls --filter "label=cluster_id={cluster_id}" -q | xargs -r docker volume rm', capture_output=True)
+    logger.log_all(f"All Docker containers and volumes with cluster ID '{cluster_id}' removed.")
 
     # Remove images.
     result = run_cmd('docker images --format "{{.Repository}} {{.ID}}"', capture_output=True)
@@ -18,8 +19,7 @@ def docker_rm_all_with_label(logger, cluster_id):
             repo, image_id = line.split()
             logger.log_all(f"Removing Docker image {repo} ({image_id})...")
             run_cmd(f'docker rmi {image_id}', capture_output=True)
-
-    logger.log_all(f"Removal of Docker containers and volumes for cluster ID '{cluster_id}' completed.")
+            logger.log_all(f"Docker image {repo} ({image_id}) Removed.")
 
 def generate_compose(logger, num_brokers=1):
     # Generate the Docker Compose configuration for the specified number of brokers.
@@ -27,7 +27,7 @@ def generate_compose(logger, num_brokers=1):
     
     logger.log_all("Generating Docker Compose configuration...")
     run_cmd(f'python -m experiments.utils.generate_docker_compose {num_brokers}', capture_output=True)
-    logger.log_all(f"Docker Compose configuration generated successfully with {num_brokers} broker(s).")
+    logger.log_all(f"Docker Compose configuration generated with {num_brokers} broker(s).")
 
 def docker_compose_up(logger):
     # Start the Kafka services using Docker Compose.
@@ -52,7 +52,7 @@ def wait_for_container_up(logger, container_names):
 def create_topic(logger, num_partitions=1):
     # Create a Kafka topic with the specified number of partitions.
     # This is done using the Kafka CLI command to create a topic.
-    logger.log_all(f"Creating Kafka topic '{TOPIC_NAME}' with {num_partitions} partition(s)...")
+    logger.log_all(f"Creating Kafka topic '{TOPIC_NAME}'...")
     cmd = (
         "kafka/bin/kafka-topics.sh "
         "--create "
@@ -62,7 +62,7 @@ def create_topic(logger, num_partitions=1):
         f"--bootstrap-server {BROKER_ADDRESS}"
     )
     run_cmd(cmd, capture_output=True)
-    logger.log_all(f"Kafka topic '{TOPIC_NAME}' created successfully.")
+    logger.log_all(f"Kafka topic '{TOPIC_NAME}' created with {num_partitions} partition(s).")
 
 def wait_for_topic_ready(logger):
     # Wait for the Kafka topic to be ready.
@@ -77,11 +77,11 @@ def wait_for_topic_ready(logger):
             break
         time.sleep(2)
 
-def setup_experiment_env(logger, cluster_id, container_names, num_brokers=1, num_partitions=1, enable_jolokia=True):
+def setup_experiment_env(logger, cluster_id, container_names, num_brokers=1, num_partitions=1):
     # Set up the full experiment environment.
     docker_rm_all_with_label(logger, cluster_id)
     generate_compose(logger, num_brokers)
-    if enable_jolokia: generate_jolokia_wrapper()
+    generate_jolokia_wrapper()
     docker_compose_up(logger)
     wait_for_container_up(logger, container_names)
     create_topic(logger, num_partitions)

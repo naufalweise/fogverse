@@ -112,6 +112,7 @@ def main():
     run_performance_tests()
 
     cleanup(logger, CLUSTER_ID)
+    logger.log_all("All done.")
 
 if __name__ == "__main__":
     main()
