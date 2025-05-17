@@ -15,3 +15,4 @@ BOOTSTRAP_SERVER = "localhost:9092"
 
 # Experiment constants.
 NUM_RECORDS = 65_536  # This is arbitrary.
+MBEAN_PRODUCE_REMOTETIME = "kafka.network:type=RequestMetrics,name=RemoteTimeMs,request=Produce"

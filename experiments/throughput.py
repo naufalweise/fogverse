@@ -12,7 +12,7 @@ from fogverse.logger.fog import FogLogger
 
 logger = FogLogger(f"throughput_{int(time.time())}")
 
-def run_producer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
+def run_producer_test(logger=logger, bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
     # Run the Kafka producer performance test using payload.txt and track progress.
     cmd = (
         "kafka/bin/kafka-producer-perf-test.sh "
@@ -106,6 +106,7 @@ def run_performance_tests():
     logger.log_all(f"Consumer Throughput (Tc): {Tc} MB/s")
 
 def main():
+    logger.log_all("Throughput measurement initiated.")
     setup_experiment_env(logger)    
 
     generate_payload(logger)
