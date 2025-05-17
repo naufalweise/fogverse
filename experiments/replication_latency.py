@@ -58,9 +58,11 @@ def measure_replication_latency(num_brokers, base_port=BASE_PORT, mbean=MBEAN_PR
 
 def main():
     logger.log_all("Replication latency measurement initiated.")
-    num_brokers = 3
 
-    setup_experiment_env(logger, num_brokers=num_brokers, replication_factor=3)
+    num_brokers = 3
+    replication_factor = 3
+
+    setup_experiment_env(logger, num_brokers=num_brokers, replication_factor=replication_factor)
 
     generate_payload(logger)
     run_producer_test(logger)
