@@ -1,4 +1,4 @@
-from experiments.constants import JOLOKIA_AGENT_PATH, JOLOKIA_VERSION
+from experiments.constants import JOLOKIA_AGENT_PATH, JOLOKIA_DOWNLOAD_URL, JOLOKIA_VERSION
 
 def generate_jolokia_wrapper():
     # This script is used to create a wrapper for the Kafka entrypoint script
@@ -27,7 +27,7 @@ JOLOKIA_AGENT_PATH={JOLOKIA_AGENT_PATH}
 if [ ! -f $JOLOKIA_AGENT_PATH ]; then
   echo 'Node 0: Downloading Jolokia agent {JOLOKIA_VERSION}...'
   curl -L -s -o $JOLOKIA_AGENT_PATH \
-https://search.maven.org/remotecontent?filepath=org/jolokia/jolokia-agent-jvm/{JOLOKIA_VERSION}/jolokia-agent-jvm-{JOLOKIA_VERSION}-javaagent.jar
+{JOLOKIA_DOWNLOAD_URL}
   if [ $? -ne 0 ] || [ ! -s $JOLOKIA_AGENT_PATH ]; then
     echo 'Node 0: Failed to download Jolokia agent.' >&2
     exit 1
@@ -42,5 +42,5 @@ echo "Node 0: Augmented KAFKA_OPTS: $KAFKA_OPTS"
 # Finally hand over to the original entrypoint script.
 exec /etc/confluent/docker/run "$@"
 """
-    with open("experiments/jolokia-wrapper.sh", "w") as f:
+    with open("jolokia-wrapper.sh", "w") as f:
         f.write(script)

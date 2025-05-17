@@ -3,7 +3,7 @@ import re
 import subprocess
 import time
 
-from experiments.constants import BROKER_ADDRESS, CLUSTER_ID, NUM_RECORDS, TOPIC_NAME
+from experiments.constants import BOOTSTRAP_SERVER, NUM_RECORDS, TOPIC_NAME
 from experiments.utils.cleanup import cleanup
 from experiments.utils.cluster_setup import setup_experiment_env
 from experiments.utils.generate_payload import generate_payload
@@ -12,17 +12,17 @@ from fogverse.logger.fog import FogLogger
 
 logger = FogLogger(f"throughput_{int(time.time())}")
 
-def run_producer_test(num_records=NUM_RECORDS):
+def run_producer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
     # Run the Kafka producer performance test using payload.txt and track progress.
     cmd = (
         "kafka/bin/kafka-producer-perf-test.sh "
-        f"--topic {TOPIC_NAME} "
+        f"--producer-props acks=all bootstrap.servers={bootstrap_server} "
+        f"--topic {topic_name} "
         f"--num-records {num_records} "
-        "--payload-file experiments/payload.txt "
+        "--payload-file payload.txt "
         "--throughput -1 "
-        f"--producer-props acks=all bootstrap.servers={BROKER_ADDRESS}"
     )
-    logger.log_all(f"Running producer performance test with {num_records} records...")
+    logger.log_all(f"Running producer with {num_records} records...")
 
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     output = []
@@ -49,16 +49,16 @@ def run_producer_test(num_records=NUM_RECORDS):
 
     return "\n".join(output)
 
-def run_consumer_test(num_records=NUM_RECORDS):
+def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
     # Run the Kafka consumer performance test.
     cmd = (
         "kafka/bin/kafka-consumer-perf-test.sh "
-        f"--topic {TOPIC_NAME} "
+        f"--bootstrap-server {bootstrap_server} "
+        f"--topic {topic_name} "
         f"--messages {num_records} "
-        f"--bootstrap-server {BROKER_ADDRESS} "
         "--show-detailed-stats"
     )
-    logger.log_all(f"Running consumer performance test with {num_records} records...")
+    logger.log_all(f"Running consumer with {num_records} records...")
     result = run_cmd(cmd, capture_output=True)
     return result.stdout
 
@@ -106,12 +106,12 @@ def run_performance_tests():
     logger.log_all(f"Consumer Throughput (Tc): {Tc} MB/s")
 
 def main():
-    setup_experiment_env(logger, CLUSTER_ID)    
+    setup_experiment_env(logger)    
 
     generate_payload(logger)
     run_performance_tests()
 
-    cleanup(logger, CLUSTER_ID)
+    cleanup(logger)
     logger.log_all("All done.")
 
 if __name__ == "__main__":

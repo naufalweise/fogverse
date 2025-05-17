@@ -1,8 +1,8 @@
 import sys
 
-from experiments.constants import CLUSTER_ID, CONTAINER_PREFIX, JOLOKIA_PORT_INTERNAL, NODE_PREFIX, VOLUME_PREFIX
+from experiments.constants import BASE_PORT, CLUSTER_ID, CONTAINER_PREFIX, JOLOKIA_PORT_INTERNAL, NODE_PREFIX, VOLUME_PREFIX
 
-def generate_docker_compose(n, base_port=9090):
+def generate_docker_compose(n, base_port=BASE_PORT):
     """
     Generates a docker-compose file for n Kafka nodes. Node IDs start at 0 and increment by 2.
     Within the ports allocated per node, the internal listener port effectively ends with 0, the external ends with 2, and the controller ends with 4.
@@ -73,7 +73,7 @@ def generate_docker_compose(n, base_port=9090):
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
-    with open("experiments/docker-compose.yml", "w") as f:
+    with open("docker-compose.yml", "w") as f:
         f.write(generate_docker_compose(n))
 
     print(f"Generated docker-compose.yml with {n} Kafka brokers.")
