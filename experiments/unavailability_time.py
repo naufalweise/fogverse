@@ -49,7 +49,7 @@ def extract_timestamp(log_line):
         return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S,%f")
     return None
 
-def measure_unavailability_time(num_brokers, kill_count):
+def measure_unavailability_time(num_brokers, kill_count, kill_interval_secs):
     container_names = get_container_names(num_brokers)
     unavailability_times = []
 
@@ -87,6 +87,8 @@ def measure_unavailability_time(num_brokers, kill_count):
             unavailability_ms = int((min_fence_time - shutdown_time).total_seconds() * 1000)
             logger.log_all(f"Unavailability time for {stopped_broker}: {unavailability_ms} ms")
             unavailability_times.append(unavailability_ms)
+        
+        time.sleep(kill_interval_secs)
 
     if unavailability_times:
         avg_time = sum(unavailability_times) / len(unavailability_times)
@@ -102,15 +104,19 @@ def main():
     num_brokers = 3
     kill_count = 1
 
-    if kill_count >= num_brokers:
-        logger.log_all("Kill count must be less than the number of brokers.")
-        return
+    quorum_size = (num_brokers // 2) + 1
+    remaining = num_brokers - kill_count
 
-    setup_experiment_env(logger, num_brokers=num_brokers)
+    if remaining < quorum_size:
+        logger.log_all(f"Not enough brokers remaining to maintain quorum: {remaining} < {quorum_size}.")
+    else:
+        setup_experiment_env(logger, num_brokers=num_brokers)
 
-    measure_unavailability_time(num_brokers, kill_count)
+        kill_interval_secs = 8
+        measure_unavailability_time(num_brokers, kill_count, kill_interval_secs)
 
-    cleanup(logger)
+        cleanup(logger)
+
     logger.log_all("Unavailability time measurement completed.")
 
 if __name__ == "__main__":
