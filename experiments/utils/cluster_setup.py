@@ -1,3 +1,4 @@
+import subprocess
 import time
 
 from experiments.constants import BOOTSTRAP_SERVER, CLUSTER_ID, NODE_PREFIX, TOPIC_NAME
@@ -9,14 +10,26 @@ def docker_rm_all_with_label(logger, cluster_id=CLUSTER_ID, node_prefix=NODE_PRE
     # This is useful for cleaning up before starting a new experiment.
     # It uses the Docker CLI to filter containers and volumes by label.
     logger.log_all(f"Removing all Docker containers and volumes with cluster ID '{cluster_id}'...")
-    run_cmd(f'docker ps -a --filter "label=cluster_id={cluster_id}" -q | xargs -r docker rm -f', capture_output=True)
+    result = run_cmd(f'docker ps -a --filter "label=cluster_id={cluster_id}" -q', capture_output=True)
+    container_ids = result.stdout.strip().split('\n') if result.stdout.strip() else []
+
+    for cid in container_ids:
+        # NOTE: Removing containers using filters causes errors if done in bulk.
+        # Containers must be stopped individually using 'docker stop' before being force-removed with 'docker rm -f' to avoid errors.
+        # Future maintainers may want to consider investigating this limitation and exploring a safer bulk removal strategy.
+        try:
+            run_cmd(f'docker stop --timeout=12 {cid}', capture_output=True)
+        except subprocess.CalledProcessError as e:
+            pass
+        run_cmd(f'docker rm -f {cid}', capture_output=True)
+
     run_cmd(f'docker volume ls --filter "label=cluster_id={cluster_id}" -q | xargs -r docker volume rm', capture_output=True)
     logger.log_all(f"All Docker containers and volumes with cluster ID '{cluster_id}' removed.")
 
     # Remove images.
     result = run_cmd('docker images --format "{{.Repository}} {{.ID}}"', capture_output=True)
     for line in result.stdout.strip().split('\n'):
-        if line.startswith(node_prefix):
+        if node_prefix in line:
             repo, image_id = line.split()
             logger.log_all(f"Removing Docker image {repo} ({image_id})...")
             run_cmd(f'docker rmi {image_id}', capture_output=True)

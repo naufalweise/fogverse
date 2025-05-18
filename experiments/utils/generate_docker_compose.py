@@ -1,6 +1,6 @@
 import sys
 
-from experiments.constants import BASE_PORT, CLUSTER_ID, CONTAINER_PREFIX, JOLOKIA_PORT_INTERNAL, NODE_PREFIX, VOLUME_PREFIX
+from experiments.constants import BASE_PORT, CLUSTER_ID, CONTAINER_PREFIX, DISK_IO_LIMIT, JOLOKIA_PORT_INTERNAL, NODE_PREFIX, OPEN_FILES_LIMIT, VOLUME_PREFIX
 
 def generate_docker_compose(n, base_port=BASE_PORT):
     """
@@ -29,6 +29,7 @@ def generate_docker_compose(n, base_port=BASE_PORT):
     build:
       context: .
       dockerfile: Dockerfile
+    init: true
     container_name: {CONTAINER_PREFIX}-{node_id}
     environment:
       CLUSTER_ID: "{CLUSTER_ID}"
@@ -57,6 +58,17 @@ def generate_docker_compose(n, base_port=BASE_PORT):
       - {VOLUME_PREFIX}_{node_id}:/var/lib/kafka/data
     mem_limit: 2g
     cpus: 1.0
+    blkio_config:
+      device_read_bps:
+        - path: /dev/dm-0
+          rate: {DISK_IO_LIMIT}
+      device_write_bps:
+        - path: /dev/dm-0
+          rate: {DISK_IO_LIMIT}
+    ulimits:
+      nofile:
+        soft: {OPEN_FILES_LIMIT}
+        hard: {OPEN_FILES_LIMIT}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:{JOLOKIA_PORT_INTERNAL}/jolokia/read/kafka.server:type=BrokerState/BrokerState || exit 1"]
       interval: 8s
