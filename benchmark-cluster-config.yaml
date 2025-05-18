@@ -4,11 +4,11 @@ partitioning_params:
   T: 1.e+8
   L: 0.2
   U: 2
-  Tp: 2.449e+7
-  Tc: 1.24e+4
+  Tp: 8.14e+6
+  Tc: 1.0143137e+7
   Hmax: 16384
-  lr: 0
-  u: 0
+  lr: 5.e-3
+  u: 2.662e-1
   c: 1
   r: 3
   B: 10

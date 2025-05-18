@@ -12,7 +12,7 @@ from fogverse.logger.fog import FogLogger
 
 logger = FogLogger(f"throughput_{int(time.time())}")
 
-def run_producer_test(logger=logger, bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS//16):
+def run_producer_test(logger=logger, bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
     # Run the Kafka producer performance test using payload.txt and track progress.
     cmd = (
         "kafka/bin/kafka-producer-perf-test.sh "
@@ -49,7 +49,7 @@ def run_producer_test(logger=logger, bootstrap_server=BOOTSTRAP_SERVER, topic_na
 
     return "\n".join(output)
 
-def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS//16):
+def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
     # Run the Kafka consumer performance test.
     cmd = (
         "kafka/bin/kafka-consumer-perf-test.sh "

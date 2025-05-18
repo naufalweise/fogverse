@@ -103,8 +103,8 @@ def measure_unavailability_time(num_brokers, kill_count, kill_interval_secs):
 def main():
     logger.log_all("Unavailability time measurement initiated.")
 
-    num_brokers = 3
-    kill_count = 1
+    num_brokers = 22
+    kill_count = 10
 
     quorum_size = (num_brokers // 2) + 1
     remaining = num_brokers - kill_count
