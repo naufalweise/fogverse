@@ -99,11 +99,11 @@ def run_performance_tests():
         consumer_output = consumer_future.result()
 
     # Parse throughput (MB/s) from performance test output.
-    producer_throughput = parse_prod_perf_test(producer_output)
-    consumer_throughput = parse_consumer_perf_test(consumer_output)
+    producer_throughput = parse_prod_perf_test(producer_output) * 1_000_000  # Convert from MB/s to bytes/s.
+    consumer_throughput = parse_consumer_perf_test(consumer_output) * 1_000_000  # Convert from MB/s to bytes/s.
 
-    logger.log_all(f"Producer Throughput: {producer_throughput} MB/s")
-    logger.log_all(f"Consumer Throughput: {consumer_throughput} MB/s")
+    logger.log_all(f"Producer Throughput: {producer_throughput} bytes/s")
+    logger.log_all(f"Consumer Throughput: {consumer_throughput} bytes/s")
 
     return producer_throughput, consumer_throughput
 

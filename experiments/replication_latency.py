@@ -43,16 +43,16 @@ def measure_replication_latency(num_brokers, base_port=BASE_PORT, mbean=MBEAN_PR
         one_min_rate = metrics.get("OneMinuteRate", 0.0)
 
         if count > 0 or one_min_rate > 0.0:
-            latency = metrics.get("Mean")
+            latency = metrics.get("Mean") / 1_000  # Convert from milliseconds to seconds.
             if latency is not None:
                 valid_latencies.append(latency)
-                logger.log_all(f"Replication latency from {url}: {latency:.2f} ms")
+                logger.log_all(f"Replication latency from {url}: {latency:.2f} second(s)")
             else:
                 logger.log_all(f"Replication latency from {url}: N/A")
 
     if valid_latencies:
         avg_latency = sum(valid_latencies) / len(valid_latencies)
-        logger.log_all(f"Average replication latency: {avg_latency:.2f} ms")
+        logger.log_all(f"Average replication latency: {avg_latency:.2f} second(s)")
         return avg_latency
     else:
         logger.log_all("No valid replication latency metrics found.")

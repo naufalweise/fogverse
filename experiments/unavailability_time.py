@@ -84,15 +84,15 @@ def measure_unavailability_time(num_brokers, kill_count, kill_interval_secs):
                 min_fence_time = fence_time
 
         if min_fence_time and shutdown_time:
-            unavailability_ms = int((min_fence_time - shutdown_time).total_seconds() * 1000)
-            logger.log_all(f"Unavailability time for {stopped_broker}: {unavailability_ms} ms")
-            unavailability_times.append(unavailability_ms)
+            unavailability_secs = int((min_fence_time - shutdown_time).total_seconds())
+            logger.log_all(f"Unavailability time for {stopped_broker}: {unavailability_secs} second(s)")
+            unavailability_times.append(unavailability_secs)
         
         time.sleep(kill_interval_secs)
 
     if unavailability_times:
         avg_time = sum(unavailability_times) / len(unavailability_times)
-        logger.log_all(f"Average unavailability time: {avg_time:.2f} ms")
+        logger.log_all(f"Average unavailability time: {avg_time:.2f} second(s)")
         return avg_time
     else:
         logger.log_all("No unavailability times recorded.")
