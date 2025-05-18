@@ -20,3 +20,8 @@ def cleanup(logger, cluster_id=CLUSTER_ID):
     if os.path.exists('payload.txt'):
         os.remove('payload.txt')
         logger.log_all("Payload file removed.")
+
+    # Remove any other temporary files or directories created during the experiment.
+    for file in os.listdir("."):
+        if file.endswith("logs.txt"):
+            os.remove(file)

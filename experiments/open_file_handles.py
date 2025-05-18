@@ -10,6 +10,8 @@ from fogverse.logger.fog import FogLogger
 logger = FogLogger(f"open_file_handles_{int(time.time())}")
 
 def get_open_file_limit_from_container(container_prefix=CONTAINER_PREFIX):
+    open_files_limit = None
+
     try:
         # Get container IDs whose names start with container_prefix.
         result = subprocess.run(
@@ -39,7 +41,7 @@ def get_open_file_limit_from_container(container_prefix=CONTAINER_PREFIX):
         match = re.search(r"open files\s+\(\-n\)\s+(\d+)", ulimit_output)
         if match:
             open_files_limit = match.group(1)
-            logger.log_all(f"Open file handle limit (Hmax): {open_files_limit} files")
+            logger.log_all(f"Open file handle limit: {open_files_limit} files")
         else:
             logger.log_all("Could not parse 'open files' limit from ulimit output.")
 
@@ -48,6 +50,8 @@ def get_open_file_limit_from_container(container_prefix=CONTAINER_PREFIX):
     except Exception as e:
         logger.log_all(f"UNKNOWN ERROR: {e}")
 
+    return open_files_limit
+
 def main():
     logger.log_all("Open file handles evaluation initiated.")
     setup_experiment_env(logger)    
@@ -55,7 +59,7 @@ def main():
     get_open_file_limit_from_container()
 
     cleanup(logger)
-    logger.log_all("All done.")
+    logger.log_all("Open file handles evaluation completed.")
 
 if __name__ == "__main__":
     main()

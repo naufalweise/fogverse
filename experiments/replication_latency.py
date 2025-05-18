@@ -53,8 +53,10 @@ def measure_replication_latency(num_brokers, base_port=BASE_PORT, mbean=MBEAN_PR
     if valid_latencies:
         avg_latency = sum(valid_latencies) / len(valid_latencies)
         logger.log_all(f"Average replication latency: {avg_latency:.2f} ms")
+        return avg_latency
     else:
         logger.log_all("No valid replication latency metrics found.")
+        return None
 
 def main():
     logger.log_all("Replication latency measurement initiated.")
@@ -69,7 +71,7 @@ def main():
     measure_replication_latency(num_brokers)
 
     cleanup(logger)
-    logger.log_all("All done.")
+    logger.log_all("Replication latency measurement completed.")
 
 if __name__ == "__main__":
     main()

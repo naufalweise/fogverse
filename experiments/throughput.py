@@ -99,11 +99,13 @@ def run_performance_tests():
         consumer_output = consumer_future.result()
 
     # Parse throughput (MB/s) from performance test output.
-    Tp = parse_prod_perf_test(producer_output)
-    Tc = parse_consumer_perf_test(consumer_output)
-    
-    logger.log_all(f"Producer Throughput (Tp): {Tp} MB/s")
-    logger.log_all(f"Consumer Throughput (Tc): {Tc} MB/s")
+    producer_throughput = parse_prod_perf_test(producer_output)
+    consumer_throughput = parse_consumer_perf_test(consumer_output)
+
+    logger.log_all(f"Producer Throughput: {producer_throughput} MB/s")
+    logger.log_all(f"Consumer Throughput: {consumer_throughput} MB/s")
+
+    return producer_throughput, consumer_throughput
 
 def main():
     logger.log_all("Throughput measurement initiated.")
@@ -113,7 +115,7 @@ def main():
     run_performance_tests()
 
     cleanup(logger)
-    logger.log_all("All done.")
+    logger.log_all("Throughput measurement completed.")
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,3 @@
-import os
 import time
 import re
 
@@ -12,79 +11,74 @@ from fogverse.logger.fog import FogLogger
 logger = FogLogger(f"unavailability_time_{int(time.time())}")
 
 def get_container_names(num_brokers, container_prefix=CONTAINER_PREFIX):
-    """
-    Returns a list of container names for broker/controller containers.
-    Assumes containers are named with even-numbered suffixes, starting from 0.
-    """
+    # Returns a list of container names for broker/controller containers.
+    # Assumes containers are named with even-numbered suffixes, starting from 0.
     return [f"{container_prefix}-{i * 2}" for i in range(num_brokers)]
 
 def save_logs(container_name):
+    # Save logs from the specified container to a file.
+    # The log file is named after the container, with a .txt extension.
     log_path = f"{container_name}-logs.txt"
     run_cmd(f"docker logs {container_name} > {log_path}")
     return log_path
 
-def wait_for_log_line(log_path, pattern):
+def wait_logmatch(container_name, pattern):
+    # Waits for a specific log line pattern to appear in the logs of a given container.
+    # Continuously saves fresh logs until the pattern is found.
     regex = re.compile(pattern)
+    log_path = f"{container_name}-logs.txt"
+
     while True:
-        with open(log_path) as f:
-            for line in f:
-                if regex.search(line):
-                    return line
+        save_logs(container_name)
+
+        try:
+            with open(log_path) as f:
+                for line in f:
+                    if regex.search(line):
+                        return line
+        except FileNotFoundError:
+            pass  # Silently skip if file doesn't exist.
+
         time.sleep(0.5)
-        save_logs(log_path.split("-")[0])  # Refresh logs
 
 def extract_timestamp(log_line):
+    # Extract timestamp from log line e.g. [1970-01-01 00:00:00,000].
     match = re.match(r"\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\]", log_line)
     if match:
         timestamp_str = match.group(1)
         return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S,%f")
     return None
 
-def delete_log_files():
-    for file in os.listdir("."):
-        if file.endswith("logs.txt"):
-            os.remove(file)
-
-def main():
-    logger.log_all("Unavailability time measurement initiated.")
-
-    num_brokers = 3
-    kill_count = 1
-
-    setup_experiment_env(logger, num_brokers=num_brokers)
-
-    if kill_count >= num_brokers:
-        logger.log_all("kill_count >= num_brokers. Operation not possible.")
-        return
-
+def measure_unavailability_time(num_brokers, kill_count):
     container_names = get_container_names(num_brokers)
     unavailability_times = []
 
     for _ in range(kill_count):
         stopped_broker = container_names.pop(0)
 
-        logger.log_all(f"Stopping broker: {stopped_broker}")
+        logger.log_all(f"Stopping {stopped_broker}...")
+
         run_cmd(f"docker stop {stopped_broker}")
 
-        log_path = save_logs(stopped_broker)
-        shutdown_line = wait_for_log_line(
-            log_path,
+        shutdown_line = wait_logmatch(
+            stopped_broker,
             r"Transition from STARTED to SHUTTING_DOWN"
         )
         shutdown_time = extract_timestamp(shutdown_line)
-        logger.log_all(f"{stopped_broker} shutdown at {shutdown_time}")
+
+        logger.log_all(f"{stopped_broker} shut down at {shutdown_time}.")
 
         min_fence_time = None
         stopped_id = int(stopped_broker.split("-")[-1])
 
         for running_broker in container_names:
-            log_path = save_logs(running_broker)
-            fence_line = wait_for_log_line(
-                log_path,
+            fence_line = wait_logmatch(
+                running_broker,
                 rf"Replayed BrokerRegistrationChangeRecord.*broker {stopped_id}.*fenced=1"
             )
             fence_time = extract_timestamp(fence_line)
-            logger.log_all(f"{running_broker} saw {stopped_broker} fenced at {fence_time}")
+
+            logger.log_all(f"{running_broker} fenced {stopped_broker} at {fence_time}.")
 
             if min_fence_time is None or fence_time < min_fence_time:
                 min_fence_time = fence_time
@@ -97,10 +91,27 @@ def main():
     if unavailability_times:
         avg_time = sum(unavailability_times) / len(unavailability_times)
         logger.log_all(f"Average unavailability time: {avg_time:.2f} ms")
+        return avg_time
+    else:
+        logger.log_all("No unavailability times recorded.")
+        return None
+
+def main():
+    logger.log_all("Unavailability time measurement initiated.")
+
+    num_brokers = 4
+    kill_count = 3
+
+    if kill_count >= num_brokers:
+        logger.log_all("Kill count must be less than the number of brokers.")
+        return
+
+    setup_experiment_env(logger, num_brokers=num_brokers)
+
+    measure_unavailability_time(num_brokers, kill_count)
 
     cleanup(logger)
-    delete_log_files()
-    logger.log_all("All done.")
+    logger.log_all("Unavailability time measurement completed.")
 
 if __name__ == "__main__":
     main()
