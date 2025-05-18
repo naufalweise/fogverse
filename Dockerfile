@@ -9,8 +9,6 @@ FROM confluentinc/cp-kafka:latest
 
 USER root
 
-COPY log4j.properties /etc/kafka/log4j.properties
-
 COPY jolokia-wrapper.sh /usr/local/bin/jolokia-wrapper.sh
 RUN chmod +x /usr/local/bin/jolokia-wrapper.sh
 

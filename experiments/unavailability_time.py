@@ -66,7 +66,7 @@ def measure_unavailability_time(num_brokers, kill_count):
         )
         shutdown_time = extract_timestamp(shutdown_line)
 
-        logger.log_all(f"{stopped_broker} shut down at {shutdown_time}.")
+        logger.log_all(f"Shutdown recorded for {stopped_broker} at {shutdown_time}.")
 
         min_fence_time = None
         stopped_id = int(stopped_broker.split("-")[-1])
@@ -78,7 +78,7 @@ def measure_unavailability_time(num_brokers, kill_count):
             )
             fence_time = extract_timestamp(fence_line)
 
-            logger.log_all(f"{running_broker} fenced {stopped_broker} at {fence_time}.")
+            logger.log_all(f"Recorded fence for {stopped_broker} by {running_broker} at {fence_time}.")
 
             if min_fence_time is None or fence_time < min_fence_time:
                 min_fence_time = fence_time
@@ -99,8 +99,8 @@ def measure_unavailability_time(num_brokers, kill_count):
 def main():
     logger.log_all("Unavailability time measurement initiated.")
 
-    num_brokers = 4
-    kill_count = 3
+    num_brokers = 3
+    kill_count = 1
 
     if kill_count >= num_brokers:
         logger.log_all("Kill count must be less than the number of brokers.")
