@@ -1,7 +1,9 @@
 import subprocess
 
+from fogverse.logger.fog import FogLogger
+
 # Run a shell command with optional error checking and output capture.
-def run_cmd(cmd, check=True, capture_output=False, **kwargs):
+def run_cmd(cmd, logger=FogLogger(name="error_logs.txt"), check=True, capture_output=False, **kwargs):
     try:
         # Execute the command using subprocess with the given options.
         # The shell=True option allows the command to be run in a shell.
@@ -11,10 +13,12 @@ def run_cmd(cmd, check=True, capture_output=False, **kwargs):
         # The kwargs allow for additional arguments to be passed to subprocess.run.
         return subprocess.run(cmd, shell=True, check=check, capture_output=capture_output, text=True, **kwargs)
     except subprocess.CalledProcessError as e:
-        # Print command output and error if capture_output is enabled.
+        # Print and log command output and error if capture_output is enabled.
         if capture_output:
             print(f"Command failed: {cmd}")
             print(f"STDERR: {e.stderr}")
             print(f"STDOUT: {e.stdout}")
+
+            logger.log_all(f"Command failed: {cmd}\nSTDERR: {e.stderr}\nSTDOUT: {e.stdout}")
         # Re-raise the exception to signal command failure.
         raise

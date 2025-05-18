@@ -1,4 +1,4 @@
-topics: [ 'test-topic']
+topics: [ 'test-topic' ]
 partitioning_params:
   algorithm: [ 'BroMin', 'BroMax' ]
   T: 1.e+8
@@ -6,9 +6,9 @@ partitioning_params:
   U: 2
   Tp: 1.e+7
   Tc: 2.e+7
-  Hmax: 3000
+  Hmax: 10000
   lr: 1.e-3
   u: 5.e-3
-  c: 200
+  c: 1
   r: 3
-  B: 15
+  B: 10

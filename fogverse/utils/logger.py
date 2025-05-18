@@ -31,7 +31,7 @@ def get_base_logger(name=None, level=FOGV_STDOUT, handlers=None, formatter=None)
 
     return logger  # Return the configured logger.
 
-def get_txt_logger(name=f"log_{int(time.time())}.txt", dirname="logs", mode="w", **kwargs):
+def get_txt_logger(name=f"log_{int(time.time())}.txt", dirname="logs", mode="a", **kwargs):
     """Create a txt-based logger that writes logs to a persistent file."""
 
     # Determine the full file path where logs will be stored.
