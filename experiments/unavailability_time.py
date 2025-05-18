@@ -101,11 +101,13 @@ def measure_unavailability_time(num_brokers, kill_count, kill_interval_secs):
 def main():
     logger.log_all("Unavailability time measurement initiated.")
 
-    num_brokers = 3
-    kill_count = 1
+    num_brokers = 22
+    kill_count = 10
 
     quorum_size = (num_brokers // 2) + 1
     remaining = num_brokers - kill_count
+
+    avg_time = None
 
     if remaining < quorum_size:
         logger.log_all(f"Not enough brokers remaining to maintain quorum: {remaining} < {quorum_size}.")
@@ -113,11 +115,13 @@ def main():
         setup_experiment_env(logger, num_brokers=num_brokers)
 
         kill_interval_secs = 8
-        measure_unavailability_time(num_brokers, kill_count, kill_interval_secs)
+        avg_time = measure_unavailability_time(num_brokers, kill_count, kill_interval_secs)
 
         cleanup(logger)
 
     logger.log_all("Unavailability time measurement completed.")
+
+    return avg_time
 
 if __name__ == "__main__":
     main()

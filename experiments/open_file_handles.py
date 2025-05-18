@@ -56,10 +56,12 @@ def main():
     logger.log_all("Open file handles evaluation initiated.")
     setup_experiment_env(logger)    
 
-    get_open_file_limit_from_container()
+    open_files_limit = get_open_file_limit_from_container()
 
     cleanup(logger)
     logger.log_all("Open file handles evaluation completed.")
+
+    return open_files_limit
 
 if __name__ == "__main__":
     main()

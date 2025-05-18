@@ -68,10 +68,12 @@ def main():
 
     generate_payload(logger)
     run_producer_test(logger)
-    measure_replication_latency(num_brokers)
+    avg_latency = measure_replication_latency(num_brokers)
 
     cleanup(logger)
     logger.log_all("Replication latency measurement completed.")
+
+    return avg_latency
 
 if __name__ == "__main__":
     main()

@@ -112,10 +112,12 @@ def main():
     setup_experiment_env(logger)    
 
     generate_payload(logger)
-    run_performance_tests()
+    producer_throughput, consumer_throughput = run_performance_tests()
 
     cleanup(logger)
     logger.log_all("Throughput measurement completed.")
+
+    return producer_throughput, consumer_throughput
 
 if __name__ == "__main__":
     main()
