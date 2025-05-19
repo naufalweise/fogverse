@@ -1,9 +1,8 @@
-import re
 import subprocess
 import time
 import yaml
 
-from experiments.constants import BOOTSTRAP_SERVER, MESSAGE_SIZES, NUM_RECORDS, TOPIC_NAME
+from experiments.constants import MESSAGE_SIZES
 from experiments.throughput import parse_consumer_perf_test, parse_prod_perf_test, run_consumer_test, run_producer_test
 from experiments.utils.cleanup import cleanup
 from experiments.utils.cluster_setup import setup_experiment_env
@@ -67,7 +66,7 @@ def main():
         results[config_name] = {}
 
         logger.log_all(f"Loading config from {config_path}...")
-        logger.log_all(json.dumps(config, indent=2))
+        logger.log_all("\n" + json.dumps(config, indent=2))
         logger.log_all(f"Config loaded successfully.")
 
         for algorithm in algorithms:
@@ -83,9 +82,9 @@ def main():
 
             for kb_size in MESSAGE_SIZES:
                 message_bytes = kb_size * 1_000
-                throughput_target_bps = params["T"]
+                target_throughput_bps = params["T"]
 
-                logger.log_all(f"Testing at {throughput_target_bps:.2e} bytes/s with message size {kb_size} KB across {partitions} partitions and {brokers} brokers.")
+                logger.log_all(f"Testing config '{config_name}' with algorithm '{algorithm}' at {target_throughput_bps:.2e} bytes/s using message size {kb_size} KB across {partitions} partitions and {brokers} brokers.")
 
                 setup_experiment_env(logger, num_partitions=partitions, num_brokers=brokers)
                 generate_payload(logger, min_kb=kb_size, max_kb=kb_size)
@@ -94,31 +93,34 @@ def main():
                 producer_output = run_producer_test(
                     logger=logger,
                     record_size=message_bytes,
-                    throughput=throughput_target_bps,
+                    throughput=target_throughput_bps,
                     log_output=True,
                     track_progress=False
                 )
                 producer_mbps, producer_latency = parse_prod_perf_test(producer_output)
                 logger.log_all(f"Production throughput is {producer_mbps:.4f} MB/s with latency of {producer_latency:.4f} ms.")
 
-                consumer_output = run_consumer_test(log_output=True)
+                consumer_output = run_consumer_test(logger, log_output=True)
                 consumer_mbps, consumer_latency = parse_consumer_perf_test(consumer_output)
                 logger.log_all(f"Consumption throughput is {consumer_mbps:.4f} MB/s with latency of {consumer_latency:.4f} ms.")
 
                 logger.log_all(f"Testing completed.")
                 # Store in results dict.
+                target_throughput_mbps = target_throughput_bps / 1_000_000  # Convert to MB/s.
                 results[config_name][algorithm][f"{kb_size}KB"] = {
                     "partitions": int(partitions),
                     "brokers": int(brokers),
                     "record_size_bytes": message_bytes,
-                    "throughput_target_bps": throughput_target_bps,
+                    "target_throughput_mbps": target_throughput_mbps,
                     "producer": {
-                        "throughput_MBps": producer_mbps,
-                        "latency_ms": producer_latency
+                        "throughput_mbps": producer_mbps,
+                        "latency_ms": producer_latency,
+                        "status": "success" if producer_mbps >= target_throughput_mbps else "failure"
                     },
                     "consumer": {
-                        "throughput_MBps": consumer_mbps,
-                        "latency_ms": consumer_latency
+                        "throughput_mbps": consumer_mbps,
+                        "latency_ms": consumer_latency,
+                        "status": "success" if consumer_mbps >= target_throughput_mbps else "failure"
                     }
                 }
 

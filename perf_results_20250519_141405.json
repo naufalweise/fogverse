@@ -1,0 +1,142 @@
+{
+  "default-cluster-config": {
+    "BroMin": {
+      "1KB": {
+        "partitions": 200,
+        "brokers": 3,
+        "record_size_bytes": 1000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 40.77,
+          "latency_ms": 538.65,
+          "status": "failure"
+        },
+        "consumer": {
+          "throughput_mbps": 0.0001,
+          "latency_ms": 111.0,
+          "status": "failure"
+        }
+      },
+      "100KB": {
+        "partitions": 200,
+        "brokers": 3,
+        "record_size_bytes": 100000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 27.04,
+          "latency_ms": 1171.23,
+          "status": "failure"
+        },
+        "consumer": {
+          "throughput_mbps": 23.88503023255814,
+          "latency_ms": 6010.581395348837,
+          "status": "failure"
+        }
+      }
+    },
+    "BroMax": {
+      "1KB": {
+        "partitions": 666,
+        "brokers": 10,
+        "record_size_bytes": 1000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 63.71,
+          "latency_ms": 282.37,
+          "status": "failure"
+        },
+        "consumer": {
+          "throughput_mbps": 0.0,
+          "latency_ms": 0.0,
+          "status": "failure"
+        }
+      },
+      "100KB": {
+        "partitions": 666,
+        "brokers": 10,
+        "record_size_bytes": 100000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 121.31,
+          "latency_ms": 226.9,
+          "status": "success"
+        },
+        "consumer": {
+          "throughput_mbps": 0.0027,
+          "latency_ms": 452.0,
+          "status": "failure"
+        }
+      }
+    }
+  },
+  "benchmark-cluster-config": {
+    "BroMin": {
+      "1KB": {
+        "partitions": 38,
+        "brokers": 3,
+        "record_size_bytes": 1000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 29.88,
+          "latency_ms": 683.08,
+          "status": "failure"
+        },
+        "consumer": {
+          "throughput_mbps": 0.0002,
+          "latency_ms": 91.0,
+          "status": "failure"
+        }
+      },
+      "100KB": {
+        "partitions": 38,
+        "brokers": 3,
+        "record_size_bytes": 100000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 17.17,
+          "latency_ms": 1853.51,
+          "status": "failure"
+        },
+        "consumer": {
+          "throughput_mbps": 15.778681034482759,
+          "latency_ms": 6710.8448275862065,
+          "status": "failure"
+        }
+      }
+    },
+    "BroMax": {
+      "1KB": {
+        "partitions": 128,
+        "brokers": 10,
+        "record_size_bytes": 1000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 58.8,
+          "latency_ms": 307.39,
+          "status": "failure"
+        },
+        "consumer": {
+          "throughput_mbps": 0.0,
+          "latency_ms": 0.0,
+          "status": "failure"
+        }
+      },
+      "100KB": {
+        "partitions": 128,
+        "brokers": 10,
+        "record_size_bytes": 100000,
+        "target_throughput_mbps": 100.0,
+        "producer": {
+          "throughput_mbps": 104.24,
+          "latency_ms": 270.55,
+          "status": "success"
+        },
+        "consumer": {
+          "throughput_mbps": 0.0028,
+          "latency_ms": 169.0,
+          "status": "failure"
+        }
+      }
+    }
+  }
+}

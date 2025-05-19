@@ -1,9 +1,10 @@
 import concurrent.futures
+import os
 import re
 import subprocess
 import time
 
-from experiments.constants import BOOTSTRAP_SERVER, NUM_RECORDS, TOPIC_NAME
+from experiments.constants import BOOTSTRAP_SERVER, KAFKA_HEAP_MAX, KAFKA_HEAP_MIN, NUM_RECORDS, TOPIC_NAME
 from experiments.utils.cleanup import cleanup
 from experiments.utils.cluster_setup import setup_experiment_env
 from experiments.utils.generate_payload import generate_payload
@@ -32,7 +33,9 @@ def run_producer_test(
     )
     logger.log_all(f"Running producer with {num_records} records...")
 
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    env = os.environ.copy()
+    env["KAFKA_HEAP_OPTS"] = f"{KAFKA_HEAP_MIN} {KAFKA_HEAP_MAX}"  # Adjust heap size as needed.
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
     output = []
 
     running_total = 0
@@ -61,19 +64,21 @@ def run_producer_test(
 
     return "\n".join(output)
 
-def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS, log_output=False):
+def run_consumer_test(logger, bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS, log_output=False):
     # Run the Kafka consumer performance test.
     cmd = (
         "kafka/bin/kafka-consumer-perf-test.sh "
         f"--bootstrap-server {bootstrap_server} "
         f"--topic {topic_name} "
         f"--messages {num_records} "
-        "--timeout 48000"
+        "--timeout 72000 "
         "--show-detailed-stats"
     )
     logger.log_all(f"Running consumer with {num_records} records...")
 
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    env = os.environ.copy()
+    env["KAFKA_HEAP_OPTS"] = "-Xms2g -Xmx16g"  # Adjust heap size as needed.
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
     output = []
 
     for line in process.stdout:
