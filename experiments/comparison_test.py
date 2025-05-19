@@ -3,7 +3,7 @@ import yaml
 
 def get_config():
     try:
-        with open("default-cluster-config.yaml", "r") as file:
+        with open("benchmark-cluster-config.yaml", "r") as file:
             return yaml.safe_load(file)
     except FileNotFoundError:
         print("YAML file not found.")
