@@ -1,0 +1,102 @@
+2025/05/19 02:06:20.684,Replication latency measurement initiated.
+2025/05/19 02:06:20.684,Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+2025/05/19 02:06:20.743,All Docker containers and volumes with cluster ID 'test-cluster' removed.
+2025/05/19 02:06:20.791,Generating Docker Compose configuration...
+2025/05/19 02:06:20.813,Docker Compose configuration generated with 3 broker(s).
+2025/05/19 02:06:20.813,Starting Kafka services...
+2025/05/19 02:06:21.843,Kafka services started.
+2025/05/19 02:06:21.843,Waiting for containers with cluster ID 'test-cluster' to start...
+2025/05/19 02:06:21.876,All containers with cluster ID 'test-cluster' are up and running.
+2025/05/19 02:06:21.876,Creating Kafka topic 'test-topic'...
+2025/05/19 02:06:33.806,Kafka topic 'test-topic' created with 1 partition(s).
+2025/05/19 02:06:33.806,Waiting for topic 'test-topic' to be ready...
+2025/05/19 02:06:35.074,Topic 'test-topic' is ready.
+2025/05/19 02:06:35.074,Generating payload file...
+2025/05/19 02:06:35.077,Generated payload 'payload.txt' from 1KB to 100KB in 1KB steps.
+2025/05/19 02:06:35.077,Running producer with 65536 records...
+2025/05/19 02:06:40.770,0% progress completed.
+2025/05/19 02:06:45.774,2% progress completed.
+2025/05/19 02:06:50.777,6% progress completed.
+2025/05/19 02:06:55.781,10% progress completed.
+2025/05/19 02:07:00.797,10% progress completed.
+2025/05/19 02:07:05.796,12% progress completed.
+2025/05/19 02:07:10.798,13% progress completed.
+2025/05/19 02:07:15.805,14% progress completed.
+2025/05/19 02:07:20.815,15% progress completed.
+2025/05/19 02:07:25.833,16% progress completed.
+2025/05/19 02:07:30.846,17% progress completed.
+2025/05/19 02:07:35.848,18% progress completed.
+2025/05/19 02:07:40.857,19% progress completed.
+2025/05/19 02:07:45.870,20% progress completed.
+2025/05/19 02:07:50.872,22% progress completed.
+2025/05/19 02:07:55.887,23% progress completed.
+2025/05/19 02:08:00.898,24% progress completed.
+2025/05/19 02:08:05.912,25% progress completed.
+2025/05/19 02:08:10.927,26% progress completed.
+2025/05/19 02:08:15.939,27% progress completed.
+2025/05/19 02:08:20.945,28% progress completed.
+2025/05/19 02:08:25.951,29% progress completed.
+2025/05/19 02:08:30.956,30% progress completed.
+2025/05/19 02:08:56.836,31% progress completed.
+2025/05/19 02:09:14.341,41% progress completed.
+2025/05/19 02:09:19.351,41% progress completed.
+2025/05/19 02:09:24.350,42% progress completed.
+2025/05/19 02:09:29.364,44% progress completed.
+2025/05/19 02:09:34.367,45% progress completed.
+2025/05/19 02:09:39.369,46% progress completed.
+2025/05/19 02:09:44.371,47% progress completed.
+2025/05/19 02:09:49.379,49% progress completed.
+2025/05/19 02:09:54.384,50% progress completed.
+2025/05/19 02:09:59.395,51% progress completed.
+2025/05/19 02:10:04.408,52% progress completed.
+2025/05/19 02:10:09.409,54% progress completed.
+2025/05/19 02:10:14.415,55% progress completed.
+2025/05/19 02:10:19.418,56% progress completed.
+2025/05/19 02:10:24.427,57% progress completed.
+2025/05/19 02:10:29.443,59% progress completed.
+2025/05/19 02:10:34.453,60% progress completed.
+2025/05/19 02:10:39.454,61% progress completed.
+2025/05/19 02:10:44.469,62% progress completed.
+2025/05/19 02:10:56.930,63% progress completed.
+2025/05/19 02:11:01.931,67% progress completed.
+2025/05/19 02:11:06.935,68% progress completed.
+2025/05/19 02:11:11.937,69% progress completed.
+2025/05/19 02:11:16.947,70% progress completed.
+2025/05/19 02:11:21.960,72% progress completed.
+2025/05/19 02:11:26.969,73% progress completed.
+2025/05/19 02:11:31.979,74% progress completed.
+2025/05/19 02:11:36.989,75% progress completed.
+2025/05/19 02:11:42.008,76% progress completed.
+2025/05/19 02:11:47.009,78% progress completed.
+2025/05/19 02:11:52.015,79% progress completed.
+2025/05/19 02:11:57.021,80% progress completed.
+2025/05/19 02:12:02.021,81% progress completed.
+2025/05/19 02:12:07.022,83% progress completed.
+2025/05/19 02:12:12.030,84% progress completed.
+2025/05/19 02:12:17.031,85% progress completed.
+2025/05/19 02:12:22.033,86% progress completed.
+2025/05/19 02:12:27.038,88% progress completed.
+2025/05/19 02:12:32.047,89% progress completed.
+2025/05/19 02:12:37.059,90% progress completed.
+2025/05/19 02:12:42.071,91% progress completed.
+2025/05/19 02:12:47.085,93% progress completed.
+2025/05/19 02:12:52.094,94% progress completed.
+2025/05/19 02:13:14.987,95% progress completed.
+2025/05/19 02:13:16.188,100% progress completed.
+2025/05/19 02:13:16.526,Replication latency from http://localhost:9096/jolokia: 0.0052 second(s)
+2025/05/19 02:13:16.535,Average replication latency: 0.0052 second(s)
+2025/05/19 02:13:16.535,Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+2025/05/19 02:14:04.721,All Docker containers and volumes with cluster ID 'test-cluster' removed.
+2025/05/19 02:14:04.734,Removing Docker image fogverse-kafka-node-0 (1fcda3177426)...
+2025/05/19 02:14:04.748,Docker image fogverse-kafka-node-0 (1fcda3177426) Removed.
+2025/05/19 02:14:04.748,Removing Docker image fogverse-kafka-node-4 (da3936c45a02)...
+2025/05/19 02:14:04.772,Docker image fogverse-kafka-node-4 (da3936c45a02) Removed.
+2025/05/19 02:14:04.772,Removing Docker image fogverse-kafka-node-2 (66090b32735f)...
+2025/05/19 02:14:04.810,Docker image fogverse-kafka-node-2 (66090b32735f) Removed.
+2025/05/19 02:14:04.810,Checking for existing Docker Compose configuration to remove...
+2025/05/19 02:14:04.810,Docker Compose configuration removed.
+2025/05/19 02:14:04.810,Checking for existing Jolokia wrapper script to remove...
+2025/05/19 02:14:04.810,Jolokia wrapper script removed.
+2025/05/19 02:14:04.811,Checking for existing payload file to remove...
+2025/05/19 02:14:04.820,Payload file removed.
+2025/05/19 02:14:04.821,Replication latency measurement completed.

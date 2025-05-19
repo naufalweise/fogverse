@@ -1,0 +1,99 @@
+[2025-05-19 01:59:13,712] Throughput measurement initiated.
+[2025-05-19 01:59:13,713] Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+[2025-05-19 01:59:13,740] All Docker containers and volumes with cluster ID 'test-cluster' removed.
+[2025-05-19 01:59:13,752] Generating Docker Compose configuration...
+[2025-05-19 01:59:13,769] Docker Compose configuration generated with 1 broker(s).
+[2025-05-19 01:59:13,769] Starting Kafka services...
+[2025-05-19 01:59:14,474] Kafka services started.
+[2025-05-19 01:59:14,474] Waiting for containers with cluster ID 'test-cluster' to start...
+[2025-05-19 01:59:14,507] All containers with cluster ID 'test-cluster' are up and running.
+[2025-05-19 01:59:14,507] Creating Kafka topic 'test-topic'...
+[2025-05-19 01:59:26,820] Kafka topic 'test-topic' created with 1 partition(s).
+[2025-05-19 01:59:26,820] Waiting for topic 'test-topic' to be ready...
+[2025-05-19 01:59:28,365] Topic 'test-topic' is ready.
+[2025-05-19 01:59:28,365] Generating payload file...
+[2025-05-19 01:59:28,369] Generated payload 'payload.txt' from 1KB to 100KB in 1KB steps.
+[2025-05-19 01:59:28,370] Running producer with 65536 records...
+[2025-05-19 01:59:28,370] Running consumer with 65536 records...
+[2025-05-19 01:59:34,095] 2% progress completed.
+[2025-05-19 01:59:39,098] 9% progress completed.
+[2025-05-19 01:59:44,124] 10% progress completed.
+[2025-05-19 01:59:49,165] 12% progress completed.
+[2025-05-19 01:59:54,231] 13% progress completed.
+[2025-05-19 01:59:59,298] 14% progress completed.
+[2025-05-19 02:00:04,370] 15% progress completed.
+[2025-05-19 02:00:09,372] 16% progress completed.
+[2025-05-19 02:00:14,379] 17% progress completed.
+[2025-05-19 02:00:19,388] 18% progress completed.
+[2025-05-19 02:00:24,428] 20% progress completed.
+[2025-05-19 02:00:30,660] 21% progress completed.
+[2025-05-19 02:00:35,662] 22% progress completed.
+[2025-05-19 02:00:40,664] 23% progress completed.
+[2025-05-19 02:00:45,682] 24% progress completed.
+[2025-05-19 02:00:50,697] 25% progress completed.
+[2025-05-19 02:00:56,475] 27% progress completed.
+[2025-05-19 02:01:01,482] 28% progress completed.
+[2025-05-19 02:01:06,498] 29% progress completed.
+[2025-05-19 02:01:11,502] 31% progress completed.
+[2025-05-19 02:01:17,853] 32% progress completed.
+[2025-05-19 02:01:23,996] 33% progress completed.
+[2025-05-19 02:01:29,148] 34% progress completed.
+[2025-05-19 02:01:34,404] 36% progress completed.
+[2025-05-19 02:01:40,465] 37% progress completed.
+[2025-05-19 02:01:46,532] 39% progress completed.
+[2025-05-19 02:01:51,534] 40% progress completed.
+[2025-05-19 02:01:56,546] 41% progress completed.
+[2025-05-19 02:02:01,563] 42% progress completed.
+[2025-05-19 02:02:06,607] 44% progress completed.
+[2025-05-19 02:02:11,617] 45% progress completed.
+[2025-05-19 02:02:17,799] 46% progress completed.
+[2025-05-19 02:02:24,069] 47% progress completed.
+[2025-05-19 02:02:29,071] 49% progress completed.
+[2025-05-19 02:02:34,078] 50% progress completed.
+[2025-05-19 02:02:39,106] 51% progress completed.
+[2025-05-19 02:02:44,546] 52% progress completed.
+[2025-05-19 02:02:50,672] 54% progress completed.
+[2025-05-19 02:02:56,860] 55% progress completed.
+[2025-05-19 02:03:03,124] 57% progress completed.
+[2025-05-19 02:03:08,873] 58% progress completed.
+[2025-05-19 02:03:17,526] 60% progress completed.
+[2025-05-19 02:03:23,634] 62% progress completed.
+[2025-05-19 02:03:29,805] 63% progress completed.
+[2025-05-19 02:03:35,910] 65% progress completed.
+[2025-05-19 02:03:42,074] 66% progress completed.
+[2025-05-19 02:03:48,195] 68% progress completed.
+[2025-05-19 02:03:54,363] 69% progress completed.
+[2025-05-19 02:04:00,603] 71% progress completed.
+[2025-05-19 02:04:05,635] 72% progress completed.
+[2025-05-19 02:04:12,876] 74% progress completed.
+[2025-05-19 02:04:19,075] 75% progress completed.
+[2025-05-19 02:04:25,636] 77% progress completed.
+[2025-05-19 02:04:31,828] 78% progress completed.
+[2025-05-19 02:04:36,860] 80% progress completed.
+[2025-05-19 02:04:41,881] 82% progress completed.
+[2025-05-19 02:04:48,552] 83% progress completed.
+[2025-05-19 02:04:54,849] 84% progress completed.
+[2025-05-19 02:05:00,932] 86% progress completed.
+[2025-05-19 02:05:07,153] 87% progress completed.
+[2025-05-19 02:05:13,272] 89% progress completed.
+[2025-05-19 02:05:19,412] 90% progress completed.
+[2025-05-19 02:05:25,697] 92% progress completed.
+[2025-05-19 02:05:31,788] 93% progress completed.
+[2025-05-19 02:05:36,847] 95% progress completed.
+[2025-05-19 02:05:41,881] 97% progress completed.
+[2025-05-19 02:05:48,645] 97% progress completed.
+[2025-05-19 02:05:54,878] 99% progress completed.
+[2025-05-19 02:05:55,517] 100% progress completed.
+[2025-05-19 02:05:55,848] Producer Throughput: 8340000.0 bytes/s
+[2025-05-19 02:05:55,848] Consumer Throughput: 8182177.358490567 bytes/s
+[2025-05-19 02:05:55,848] Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+[2025-05-19 02:06:20,629] All Docker containers and volumes with cluster ID 'test-cluster' removed.
+[2025-05-19 02:06:20,645] Removing Docker image fogverse-kafka-node-0 (1fcda3177426)...
+[2025-05-19 02:06:20,673] Docker image fogverse-kafka-node-0 (1fcda3177426) Removed.
+[2025-05-19 02:06:20,673] Checking for existing Docker Compose configuration to remove...
+[2025-05-19 02:06:20,673] Docker Compose configuration removed.
+[2025-05-19 02:06:20,673] Checking for existing Jolokia wrapper script to remove...
+[2025-05-19 02:06:20,674] Jolokia wrapper script removed.
+[2025-05-19 02:06:20,674] Checking for existing payload file to remove...
+[2025-05-19 02:06:20,683] Payload file removed.
+[2025-05-19 02:06:20,683] Throughput measurement completed.

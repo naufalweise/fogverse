@@ -1,0 +1,261 @@
+2025/05/19 02:14:20.872,Unavailability time measurement initiated.
+2025/05/19 02:14:20.872,Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+2025/05/19 02:14:20.941,All Docker containers and volumes with cluster ID 'test-cluster' removed.
+2025/05/19 02:14:20.982,Generating Docker Compose configuration...
+2025/05/19 02:14:21.027,Docker Compose configuration generated with 22 broker(s).
+2025/05/19 02:14:21.027,Starting Kafka services...
+2025/05/19 02:14:25.409,Kafka services started.
+2025/05/19 02:14:25.409,Waiting for containers with cluster ID 'test-cluster' to start...
+2025/05/19 02:14:25.442,All containers with cluster ID 'test-cluster' are up and running.
+2025/05/19 02:14:25.442,Creating Kafka topic 'test-topic'...
+2025/05/19 02:14:41.819,Kafka topic 'test-topic' created with 1 partition(s).
+2025/05/19 02:14:41.819,Waiting for topic 'test-topic' to be ready...
+2025/05/19 02:14:43.191,Topic 'test-topic' is ready.
+2025/05/19 02:14:43.191,Stopping test-container-0...
+2025/05/19 02:14:44.827,Shutdown recorded for test-container-0 at 2025-05-19 02:14:43.238000.
+2025/05/19 02:14:44.862,Recorded fence for test-container-0 by test-container-2 at 2025-05-19 02:14:44.378000.
+2025/05/19 02:14:44.893,Recorded fence for test-container-0 by test-container-4 at 2025-05-19 02:14:44.462000.
+2025/05/19 02:14:44.944,Recorded fence for test-container-0 by test-container-6 at 2025-05-19 02:14:44.461000.
+2025/05/19 02:14:44.967,Recorded fence for test-container-0 by test-container-8 at 2025-05-19 02:14:44.423000.
+2025/05/19 02:14:45.007,Recorded fence for test-container-0 by test-container-10 at 2025-05-19 02:14:44.383000.
+2025/05/19 02:14:45.054,Recorded fence for test-container-0 by test-container-12 at 2025-05-19 02:14:44.424000.
+2025/05/19 02:14:45.107,Recorded fence for test-container-0 by test-container-14 at 2025-05-19 02:14:44.375000.
+2025/05/19 02:14:45.156,Recorded fence for test-container-0 by test-container-16 at 2025-05-19 02:14:44.384000.
+2025/05/19 02:14:45.177,Recorded fence for test-container-0 by test-container-18 at 2025-05-19 02:14:44.374000.
+2025/05/19 02:14:45.206,Recorded fence for test-container-0 by test-container-20 at 2025-05-19 02:14:43.869000.
+2025/05/19 02:14:45.238,Recorded fence for test-container-0 by test-container-22 at 2025-05-19 02:14:44.375000.
+2025/05/19 02:14:45.267,Recorded fence for test-container-0 by test-container-24 at 2025-05-19 02:14:44.462000.
+2025/05/19 02:14:45.315,Recorded fence for test-container-0 by test-container-26 at 2025-05-19 02:14:44.460000.
+2025/05/19 02:14:45.365,Recorded fence for test-container-0 by test-container-28 at 2025-05-19 02:14:44.375000.
+2025/05/19 02:14:45.400,Recorded fence for test-container-0 by test-container-30 at 2025-05-19 02:14:44.420000.
+2025/05/19 02:14:45.446,Recorded fence for test-container-0 by test-container-32 at 2025-05-19 02:14:44.381000.
+2025/05/19 02:14:45.466,Recorded fence for test-container-0 by test-container-34 at 2025-05-19 02:14:44.426000.
+2025/05/19 02:14:45.479,Recorded fence for test-container-0 by test-container-36 at 2025-05-19 02:14:44.426000.
+2025/05/19 02:14:45.491,Recorded fence for test-container-0 by test-container-38 at 2025-05-19 02:14:44.377000.
+2025/05/19 02:14:45.511,Recorded fence for test-container-0 by test-container-40 at 2025-05-19 02:14:44.423000.
+2025/05/19 02:14:45.555,Recorded fence for test-container-0 by test-container-42 at 2025-05-19 02:14:44.375000.
+2025/05/19 02:14:45.555,Unavailability time for test-container-0: 0.6310 second(s)
+2025/05/19 02:14:53.556,Stopping test-container-2...
+2025/05/19 02:14:54.979,Shutdown recorded for test-container-2 at 2025-05-19 02:14:53.602000.
+2025/05/19 02:14:55.005,Recorded fence for test-container-2 by test-container-4 at 2025-05-19 02:14:53.919000.
+2025/05/19 02:14:55.053,Recorded fence for test-container-2 by test-container-6 at 2025-05-19 02:14:53.915000.
+2025/05/19 02:14:55.086,Recorded fence for test-container-2 by test-container-8 at 2025-05-19 02:14:53.921000.
+2025/05/19 02:14:55.139,Recorded fence for test-container-2 by test-container-10 at 2025-05-19 02:14:53.913000.
+2025/05/19 02:14:55.179,Recorded fence for test-container-2 by test-container-12 at 2025-05-19 02:14:53.913000.
+2025/05/19 02:14:55.214,Recorded fence for test-container-2 by test-container-14 at 2025-05-19 02:14:53.917000.
+2025/05/19 02:14:55.246,Recorded fence for test-container-2 by test-container-16 at 2025-05-19 02:14:53.911000.
+2025/05/19 02:14:55.288,Recorded fence for test-container-2 by test-container-18 at 2025-05-19 02:14:53.922000.
+2025/05/19 02:14:55.322,Recorded fence for test-container-2 by test-container-20 at 2025-05-19 02:14:53.612000.
+2025/05/19 02:14:55.360,Recorded fence for test-container-2 by test-container-22 at 2025-05-19 02:14:53.914000.
+2025/05/19 02:14:55.387,Recorded fence for test-container-2 by test-container-24 at 2025-05-19 02:14:53.925000.
+2025/05/19 02:14:55.419,Recorded fence for test-container-2 by test-container-26 at 2025-05-19 02:14:53.924000.
+2025/05/19 02:14:55.435,Recorded fence for test-container-2 by test-container-28 at 2025-05-19 02:14:53.913000.
+2025/05/19 02:14:55.447,Recorded fence for test-container-2 by test-container-30 at 2025-05-19 02:14:53.917000.
+2025/05/19 02:14:55.471,Recorded fence for test-container-2 by test-container-32 at 2025-05-19 02:14:53.917000.
+2025/05/19 02:14:55.486,Recorded fence for test-container-2 by test-container-34 at 2025-05-19 02:14:53.923000.
+2025/05/19 02:14:55.499,Recorded fence for test-container-2 by test-container-36 at 2025-05-19 02:14:53.920000.
+2025/05/19 02:14:55.514,Recorded fence for test-container-2 by test-container-38 at 2025-05-19 02:14:53.922000.
+2025/05/19 02:14:55.530,Recorded fence for test-container-2 by test-container-40 at 2025-05-19 02:14:53.909000.
+2025/05/19 02:14:55.565,Recorded fence for test-container-2 by test-container-42 at 2025-05-19 02:14:53.923000.
+2025/05/19 02:14:55.565,Unavailability time for test-container-2: 0.0100 second(s)
+2025/05/19 02:15:03.566,Stopping test-container-4...
+2025/05/19 02:15:05.099,Shutdown recorded for test-container-4 at 2025-05-19 02:15:03.615000.
+2025/05/19 02:15:05.136,Recorded fence for test-container-4 by test-container-6 at 2025-05-19 02:15:03.920000.
+2025/05/19 02:15:05.162,Recorded fence for test-container-4 by test-container-8 at 2025-05-19 02:15:03.920000.
+2025/05/19 02:15:05.199,Recorded fence for test-container-4 by test-container-10 at 2025-05-19 02:15:03.918000.
+2025/05/19 02:15:05.235,Recorded fence for test-container-4 by test-container-12 at 2025-05-19 02:15:03.918000.
+2025/05/19 02:15:05.254,Recorded fence for test-container-4 by test-container-14 at 2025-05-19 02:15:03.920000.
+2025/05/19 02:15:05.275,Recorded fence for test-container-4 by test-container-16 at 2025-05-19 02:15:03.915000.
+2025/05/19 02:15:05.290,Recorded fence for test-container-4 by test-container-18 at 2025-05-19 02:15:03.922000.
+2025/05/19 02:15:05.326,Recorded fence for test-container-4 by test-container-20 at 2025-05-19 02:15:03.620000.
+2025/05/19 02:15:05.368,Recorded fence for test-container-4 by test-container-22 at 2025-05-19 02:15:03.924000.
+2025/05/19 02:15:05.401,Recorded fence for test-container-4 by test-container-24 at 2025-05-19 02:15:03.920000.
+2025/05/19 02:15:05.449,Recorded fence for test-container-4 by test-container-26 at 2025-05-19 02:15:03.921000.
+2025/05/19 02:15:05.497,Recorded fence for test-container-4 by test-container-28 at 2025-05-19 02:15:03.920000.
+2025/05/19 02:15:05.545,Recorded fence for test-container-4 by test-container-30 at 2025-05-19 02:15:03.918000.
+2025/05/19 02:15:05.560,Recorded fence for test-container-4 by test-container-32 at 2025-05-19 02:15:03.918000.
+2025/05/19 02:15:05.579,Recorded fence for test-container-4 by test-container-34 at 2025-05-19 02:15:03.917000.
+2025/05/19 02:15:05.615,Recorded fence for test-container-4 by test-container-36 at 2025-05-19 02:15:03.920000.
+2025/05/19 02:15:05.638,Recorded fence for test-container-4 by test-container-38 at 2025-05-19 02:15:03.921000.
+2025/05/19 02:15:05.663,Recorded fence for test-container-4 by test-container-40 at 2025-05-19 02:15:03.922000.
+2025/05/19 02:15:05.710,Recorded fence for test-container-4 by test-container-42 at 2025-05-19 02:15:03.917000.
+2025/05/19 02:15:05.710,Unavailability time for test-container-4: 0.0050 second(s)
+2025/05/19 02:15:13.711,Stopping test-container-6...
+2025/05/19 02:15:15.001,Shutdown recorded for test-container-6 at 2025-05-19 02:15:13.755000.
+2025/05/19 02:15:15.024,Recorded fence for test-container-6 by test-container-8 at 2025-05-19 02:15:13.916000.
+2025/05/19 02:15:15.071,Recorded fence for test-container-6 by test-container-10 at 2025-05-19 02:15:13.915000.
+2025/05/19 02:15:15.103,Recorded fence for test-container-6 by test-container-12 at 2025-05-19 02:15:13.915000.
+2025/05/19 02:15:15.132,Recorded fence for test-container-6 by test-container-14 at 2025-05-19 02:15:13.914000.
+2025/05/19 02:15:15.164,Recorded fence for test-container-6 by test-container-16 at 2025-05-19 02:15:13.914000.
+2025/05/19 02:15:15.189,Recorded fence for test-container-6 by test-container-18 at 2025-05-19 02:15:13.914000.
+2025/05/19 02:15:15.227,Recorded fence for test-container-6 by test-container-20 at 2025-05-19 02:15:13.758000.
+2025/05/19 02:15:15.266,Recorded fence for test-container-6 by test-container-22 at 2025-05-19 02:15:13.915000.
+2025/05/19 02:15:15.292,Recorded fence for test-container-6 by test-container-24 at 2025-05-19 02:15:13.917000.
+2025/05/19 02:15:15.316,Recorded fence for test-container-6 by test-container-26 at 2025-05-19 02:15:13.915000.
+2025/05/19 02:15:15.334,Recorded fence for test-container-6 by test-container-28 at 2025-05-19 02:15:13.914000.
+2025/05/19 02:15:15.363,Recorded fence for test-container-6 by test-container-30 at 2025-05-19 02:15:13.916000.
+2025/05/19 02:15:15.397,Recorded fence for test-container-6 by test-container-32 at 2025-05-19 02:15:13.916000.
+2025/05/19 02:15:15.417,Recorded fence for test-container-6 by test-container-34 at 2025-05-19 02:15:13.913000.
+2025/05/19 02:15:15.441,Recorded fence for test-container-6 by test-container-36 at 2025-05-19 02:15:13.915000.
+2025/05/19 02:15:15.465,Recorded fence for test-container-6 by test-container-38 at 2025-05-19 02:15:13.916000.
+2025/05/19 02:15:15.508,Recorded fence for test-container-6 by test-container-40 at 2025-05-19 02:15:13.914000.
+2025/05/19 02:15:15.553,Recorded fence for test-container-6 by test-container-42 at 2025-05-19 02:15:13.916000.
+2025/05/19 02:15:15.553,Unavailability time for test-container-6: 0.0030 second(s)
+2025/05/19 02:15:23.554,Stopping test-container-8...
+2025/05/19 02:15:24.947,Shutdown recorded for test-container-8 at 2025-05-19 02:15:23.592000.
+2025/05/19 02:15:24.960,Recorded fence for test-container-8 by test-container-10 at 2025-05-19 02:15:23.924000.
+2025/05/19 02:15:24.978,Recorded fence for test-container-8 by test-container-12 at 2025-05-19 02:15:23.922000.
+2025/05/19 02:15:25.009,Recorded fence for test-container-8 by test-container-14 at 2025-05-19 02:15:23.922000.
+2025/05/19 02:15:25.054,Recorded fence for test-container-8 by test-container-16 at 2025-05-19 02:15:23.920000.
+2025/05/19 02:15:25.085,Recorded fence for test-container-8 by test-container-18 at 2025-05-19 02:15:23.924000.
+2025/05/19 02:15:25.102,Recorded fence for test-container-8 by test-container-20 at 2025-05-19 02:15:23.596000.
+2025/05/19 02:15:25.113,Recorded fence for test-container-8 by test-container-22 at 2025-05-19 02:15:23.921000.
+2025/05/19 02:15:25.133,Recorded fence for test-container-8 by test-container-24 at 2025-05-19 02:15:23.923000.
+2025/05/19 02:15:25.148,Recorded fence for test-container-8 by test-container-26 at 2025-05-19 02:15:23.922000.
+2025/05/19 02:15:25.185,Recorded fence for test-container-8 by test-container-28 at 2025-05-19 02:15:23.924000.
+2025/05/19 02:15:25.212,Recorded fence for test-container-8 by test-container-30 at 2025-05-19 02:15:23.924000.
+2025/05/19 02:15:25.248,Recorded fence for test-container-8 by test-container-32 at 2025-05-19 02:15:23.921000.
+2025/05/19 02:15:25.296,Recorded fence for test-container-8 by test-container-34 at 2025-05-19 02:15:23.923000.
+2025/05/19 02:15:25.330,Recorded fence for test-container-8 by test-container-36 at 2025-05-19 02:15:23.921000.
+2025/05/19 02:15:25.384,Recorded fence for test-container-8 by test-container-38 at 2025-05-19 02:15:23.921000.
+2025/05/19 02:15:25.435,Recorded fence for test-container-8 by test-container-40 at 2025-05-19 02:15:23.920000.
+2025/05/19 02:15:25.464,Recorded fence for test-container-8 by test-container-42 at 2025-05-19 02:15:23.923000.
+2025/05/19 02:15:25.464,Unavailability time for test-container-8: 0.0040 second(s)
+2025/05/19 02:15:33.464,Stopping test-container-10...
+2025/05/19 02:15:34.702,Shutdown recorded for test-container-10 at 2025-05-19 02:15:33.523000.
+2025/05/19 02:15:34.736,Recorded fence for test-container-10 by test-container-12 at 2025-05-19 02:15:33.924000.
+2025/05/19 02:15:34.761,Recorded fence for test-container-10 by test-container-14 at 2025-05-19 02:15:33.924000.
+2025/05/19 02:15:34.782,Recorded fence for test-container-10 by test-container-16 at 2025-05-19 02:15:33.922000.
+2025/05/19 02:15:34.813,Recorded fence for test-container-10 by test-container-18 at 2025-05-19 02:15:33.928000.
+2025/05/19 02:15:34.844,Recorded fence for test-container-10 by test-container-20 at 2025-05-19 02:15:33.527000.
+2025/05/19 02:15:34.874,Recorded fence for test-container-10 by test-container-22 at 2025-05-19 02:15:33.926000.
+2025/05/19 02:15:34.924,Recorded fence for test-container-10 by test-container-24 at 2025-05-19 02:15:33.922000.
+2025/05/19 02:15:34.960,Recorded fence for test-container-10 by test-container-26 at 2025-05-19 02:15:33.926000.
+2025/05/19 02:15:34.998,Recorded fence for test-container-10 by test-container-28 at 2025-05-19 02:15:33.927000.
+2025/05/19 02:15:35.050,Recorded fence for test-container-10 by test-container-30 at 2025-05-19 02:15:33.924000.
+2025/05/19 02:15:35.091,Recorded fence for test-container-10 by test-container-32 at 2025-05-19 02:15:33.922000.
+2025/05/19 02:15:35.123,Recorded fence for test-container-10 by test-container-34 at 2025-05-19 02:15:33.928000.
+2025/05/19 02:15:35.158,Recorded fence for test-container-10 by test-container-36 at 2025-05-19 02:15:33.926000.
+2025/05/19 02:15:35.185,Recorded fence for test-container-10 by test-container-38 at 2025-05-19 02:15:33.928000.
+2025/05/19 02:15:35.204,Recorded fence for test-container-10 by test-container-40 at 2025-05-19 02:15:33.925000.
+2025/05/19 02:15:35.220,Recorded fence for test-container-10 by test-container-42 at 2025-05-19 02:15:33.925000.
+2025/05/19 02:15:35.220,Unavailability time for test-container-10: 0.0040 second(s)
+2025/05/19 02:15:43.220,Stopping test-container-12...
+2025/05/19 02:15:44.638,Shutdown recorded for test-container-12 at 2025-05-19 02:15:43.267000.
+2025/05/19 02:15:44.677,Recorded fence for test-container-12 by test-container-14 at 2025-05-19 02:15:43.429000.
+2025/05/19 02:15:44.715,Recorded fence for test-container-12 by test-container-16 at 2025-05-19 02:15:43.426000.
+2025/05/19 02:15:44.734,Recorded fence for test-container-12 by test-container-18 at 2025-05-19 02:15:43.430000.
+2025/05/19 02:15:44.747,Recorded fence for test-container-12 by test-container-20 at 2025-05-19 02:15:43.272000.
+2025/05/19 02:15:44.759,Recorded fence for test-container-12 by test-container-22 at 2025-05-19 02:15:43.427000.
+2025/05/19 02:15:44.792,Recorded fence for test-container-12 by test-container-24 at 2025-05-19 02:15:43.430000.
+2025/05/19 02:15:44.842,Recorded fence for test-container-12 by test-container-26 at 2025-05-19 02:15:43.432000.
+2025/05/19 02:15:44.893,Recorded fence for test-container-12 by test-container-28 at 2025-05-19 02:15:43.429000.
+2025/05/19 02:15:44.949,Recorded fence for test-container-12 by test-container-30 at 2025-05-19 02:15:43.428000.
+2025/05/19 02:15:44.969,Recorded fence for test-container-12 by test-container-32 at 2025-05-19 02:15:43.429000.
+2025/05/19 02:15:45.007,Recorded fence for test-container-12 by test-container-34 at 2025-05-19 02:15:43.429000.
+2025/05/19 02:15:45.030,Recorded fence for test-container-12 by test-container-36 at 2025-05-19 02:15:43.429000.
+2025/05/19 02:15:45.067,Recorded fence for test-container-12 by test-container-38 at 2025-05-19 02:15:43.428000.
+2025/05/19 02:15:45.112,Recorded fence for test-container-12 by test-container-40 at 2025-05-19 02:15:43.428000.
+2025/05/19 02:15:45.154,Recorded fence for test-container-12 by test-container-42 at 2025-05-19 02:15:43.429000.
+2025/05/19 02:15:45.155,Unavailability time for test-container-12: 0.0050 second(s)
+2025/05/19 02:15:53.155,Stopping test-container-14...
+2025/05/19 02:15:54.718,Shutdown recorded for test-container-14 at 2025-05-19 02:15:53.209000.
+2025/05/19 02:15:54.748,Recorded fence for test-container-14 by test-container-16 at 2025-05-19 02:15:53.430000.
+2025/05/19 02:15:54.772,Recorded fence for test-container-14 by test-container-18 at 2025-05-19 02:15:53.430000.
+2025/05/19 02:15:54.807,Recorded fence for test-container-14 by test-container-20 at 2025-05-19 02:15:53.213000.
+2025/05/19 02:15:54.854,Recorded fence for test-container-14 by test-container-22 at 2025-05-19 02:15:53.429000.
+2025/05/19 02:15:54.891,Recorded fence for test-container-14 by test-container-24 at 2025-05-19 02:15:53.431000.
+2025/05/19 02:15:54.937,Recorded fence for test-container-14 by test-container-26 at 2025-05-19 02:15:53.431000.
+2025/05/19 02:15:54.988,Recorded fence for test-container-14 by test-container-28 at 2025-05-19 02:15:53.429000.
+2025/05/19 02:15:55.043,Recorded fence for test-container-14 by test-container-30 at 2025-05-19 02:15:53.430000.
+2025/05/19 02:15:55.094,Recorded fence for test-container-14 by test-container-32 at 2025-05-19 02:15:53.430000.
+2025/05/19 02:15:55.139,Recorded fence for test-container-14 by test-container-34 at 2025-05-19 02:15:53.429000.
+2025/05/19 02:15:55.156,Recorded fence for test-container-14 by test-container-36 at 2025-05-19 02:15:53.429000.
+2025/05/19 02:15:55.169,Recorded fence for test-container-14 by test-container-38 at 2025-05-19 02:15:53.429000.
+2025/05/19 02:15:55.203,Recorded fence for test-container-14 by test-container-40 at 2025-05-19 02:15:53.430000.
+2025/05/19 02:15:55.234,Recorded fence for test-container-14 by test-container-42 at 2025-05-19 02:15:53.430000.
+2025/05/19 02:15:55.234,Unavailability time for test-container-14: 0.0040 second(s)
+2025/05/19 02:16:03.235,Stopping test-container-16...
+2025/05/19 02:16:04.508,Shutdown recorded for test-container-16 at 2025-05-19 02:16:03.250000.
+2025/05/19 02:16:04.521,Recorded fence for test-container-16 by test-container-18 at 2025-05-19 02:16:03.430000.
+2025/05/19 02:16:04.535,Recorded fence for test-container-16 by test-container-20 at 2025-05-19 02:16:03.251000.
+2025/05/19 02:16:04.549,Recorded fence for test-container-16 by test-container-22 at 2025-05-19 02:16:03.430000.
+2025/05/19 02:16:04.567,Recorded fence for test-container-16 by test-container-24 at 2025-05-19 02:16:03.430000.
+2025/05/19 02:16:04.613,Recorded fence for test-container-16 by test-container-26 at 2025-05-19 02:16:03.430000.
+2025/05/19 02:16:04.662,Recorded fence for test-container-16 by test-container-28 at 2025-05-19 02:16:03.430000.
+2025/05/19 02:16:04.710,Recorded fence for test-container-16 by test-container-30 at 2025-05-19 02:16:03.431000.
+2025/05/19 02:16:04.734,Recorded fence for test-container-16 by test-container-32 at 2025-05-19 02:16:03.431000.
+2025/05/19 02:16:04.748,Recorded fence for test-container-16 by test-container-34 at 2025-05-19 02:16:03.431000.
+2025/05/19 02:16:04.762,Recorded fence for test-container-16 by test-container-36 at 2025-05-19 02:16:03.429000.
+2025/05/19 02:16:04.786,Recorded fence for test-container-16 by test-container-38 at 2025-05-19 02:16:03.432000.
+2025/05/19 02:16:04.803,Recorded fence for test-container-16 by test-container-40 at 2025-05-19 02:16:03.430000.
+2025/05/19 02:16:04.823,Recorded fence for test-container-16 by test-container-42 at 2025-05-19 02:16:03.431000.
+2025/05/19 02:16:04.823,Unavailability time for test-container-16: 0.0010 second(s)
+2025/05/19 02:16:12.824,Stopping test-container-18...
+2025/05/19 02:16:13.955,Shutdown recorded for test-container-18 at 2025-05-19 02:16:12.883000.
+2025/05/19 02:16:13.969,Recorded fence for test-container-18 by test-container-20 at 2025-05-19 02:16:12.887000.
+2025/05/19 02:16:13.991,Recorded fence for test-container-18 by test-container-22 at 2025-05-19 02:16:13.431000.
+2025/05/19 02:16:14.023,Recorded fence for test-container-18 by test-container-24 at 2025-05-19 02:16:13.431000.
+2025/05/19 02:16:14.070,Recorded fence for test-container-18 by test-container-26 at 2025-05-19 02:16:13.429000.
+2025/05/19 02:16:14.110,Recorded fence for test-container-18 by test-container-28 at 2025-05-19 02:16:13.430000.
+2025/05/19 02:16:14.158,Recorded fence for test-container-18 by test-container-30 at 2025-05-19 02:16:13.430000.
+2025/05/19 02:16:14.209,Recorded fence for test-container-18 by test-container-32 at 2025-05-19 02:16:13.432000.
+2025/05/19 02:16:14.243,Recorded fence for test-container-18 by test-container-34 at 2025-05-19 02:16:13.420000.
+2025/05/19 02:16:14.270,Recorded fence for test-container-18 by test-container-36 at 2025-05-19 02:16:13.430000.
+2025/05/19 02:16:14.305,Recorded fence for test-container-18 by test-container-38 at 2025-05-19 02:16:13.431000.
+2025/05/19 02:16:14.326,Recorded fence for test-container-18 by test-container-40 at 2025-05-19 02:16:13.420000.
+2025/05/19 02:16:14.367,Recorded fence for test-container-18 by test-container-42 at 2025-05-19 02:16:13.431000.
+2025/05/19 02:16:14.368,Unavailability time for test-container-18: 0.0040 second(s)
+2025/05/19 02:16:22.368,Average unavailability time: 0.0671 second(s)
+2025/05/19 02:16:22.368,Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+2025/05/19 02:18:42.810,All Docker containers and volumes with cluster ID 'test-cluster' removed.
+2025/05/19 02:18:42.868,Removing Docker image fogverse-kafka-node-0 (1fcda3177426)...
+2025/05/19 02:18:42.908,Docker image fogverse-kafka-node-0 (1fcda3177426) Removed.
+2025/05/19 02:18:42.908,Removing Docker image fogverse-kafka-node-24 (e8d3fd9a8354)...
+2025/05/19 02:18:42.954,Docker image fogverse-kafka-node-24 (e8d3fd9a8354) Removed.
+2025/05/19 02:18:42.955,Removing Docker image fogverse-kafka-node-40 (ce8ce36e1d70)...
+2025/05/19 02:18:42.994,Docker image fogverse-kafka-node-40 (ce8ce36e1d70) Removed.
+2025/05/19 02:18:42.995,Removing Docker image fogverse-kafka-node-36 (9c097c2b7086)...
+2025/05/19 02:18:43.044,Docker image fogverse-kafka-node-36 (9c097c2b7086) Removed.
+2025/05/19 02:18:43.044,Removing Docker image fogverse-kafka-node-28 (9f6c8106dfa6)...
+2025/05/19 02:18:43.082,Docker image fogverse-kafka-node-28 (9f6c8106dfa6) Removed.
+2025/05/19 02:18:43.082,Removing Docker image fogverse-kafka-node-42 (dd3ff940f5ca)...
+2025/05/19 02:18:43.129,Docker image fogverse-kafka-node-42 (dd3ff940f5ca) Removed.
+2025/05/19 02:18:43.130,Removing Docker image fogverse-kafka-node-20 (a3225800edb6)...
+2025/05/19 02:18:43.175,Docker image fogverse-kafka-node-20 (a3225800edb6) Removed.
+2025/05/19 02:18:43.176,Removing Docker image fogverse-kafka-node-38 (f124674315cf)...
+2025/05/19 02:18:43.220,Docker image fogverse-kafka-node-38 (f124674315cf) Removed.
+2025/05/19 02:18:43.221,Removing Docker image fogverse-kafka-node-10 (9cc523b37294)...
+2025/05/19 02:18:43.258,Docker image fogverse-kafka-node-10 (9cc523b37294) Removed.
+2025/05/19 02:18:43.258,Removing Docker image fogverse-kafka-node-4 (da3936c45a02)...
+2025/05/19 02:18:43.307,Docker image fogverse-kafka-node-4 (da3936c45a02) Removed.
+2025/05/19 02:18:43.307,Removing Docker image fogverse-kafka-node-2 (66090b32735f)...
+2025/05/19 02:18:43.355,Docker image fogverse-kafka-node-2 (66090b32735f) Removed.
+2025/05/19 02:18:43.355,Removing Docker image fogverse-kafka-node-16 (302d2426a353)...
+2025/05/19 02:18:43.400,Docker image fogverse-kafka-node-16 (302d2426a353) Removed.
+2025/05/19 02:18:43.400,Removing Docker image fogverse-kafka-node-26 (9158fa04713d)...
+2025/05/19 02:18:43.434,Docker image fogverse-kafka-node-26 (9158fa04713d) Removed.
+2025/05/19 02:18:43.434,Removing Docker image fogverse-kafka-node-18 (dd3bca010e1f)...
+2025/05/19 02:18:43.480,Docker image fogverse-kafka-node-18 (dd3bca010e1f) Removed.
+2025/05/19 02:18:43.480,Removing Docker image fogverse-kafka-node-12 (489bcb581dd0)...
+2025/05/19 02:18:43.518,Docker image fogverse-kafka-node-12 (489bcb581dd0) Removed.
+2025/05/19 02:18:43.518,Removing Docker image fogverse-kafka-node-30 (f8d0b323d3b7)...
+2025/05/19 02:18:43.557,Docker image fogverse-kafka-node-30 (f8d0b323d3b7) Removed.
+2025/05/19 02:18:43.557,Removing Docker image fogverse-kafka-node-22 (cf41212c83cb)...
+2025/05/19 02:18:43.588,Docker image fogverse-kafka-node-22 (cf41212c83cb) Removed.
+2025/05/19 02:18:43.588,Removing Docker image fogverse-kafka-node-32 (cfdb539c25b8)...
+2025/05/19 02:18:43.635,Docker image fogverse-kafka-node-32 (cfdb539c25b8) Removed.
+2025/05/19 02:18:43.635,Removing Docker image fogverse-kafka-node-34 (5f1bf4e16336)...
+2025/05/19 02:18:43.675,Docker image fogverse-kafka-node-34 (5f1bf4e16336) Removed.
+2025/05/19 02:18:43.675,Removing Docker image fogverse-kafka-node-14 (15c4b8c04c84)...
+2025/05/19 02:18:43.718,Docker image fogverse-kafka-node-14 (15c4b8c04c84) Removed.
+2025/05/19 02:18:43.719,Removing Docker image fogverse-kafka-node-6 (5ebf3719dcce)...
+2025/05/19 02:18:43.751,Docker image fogverse-kafka-node-6 (5ebf3719dcce) Removed.
+2025/05/19 02:18:43.751,Removing Docker image fogverse-kafka-node-8 (ecddb7f25502)...
+2025/05/19 02:18:43.786,Docker image fogverse-kafka-node-8 (ecddb7f25502) Removed.
+2025/05/19 02:18:43.786,Checking for existing Docker Compose configuration to remove...
+2025/05/19 02:18:43.787,Docker Compose configuration removed.
+2025/05/19 02:18:43.787,Checking for existing Jolokia wrapper script to remove...
+2025/05/19 02:18:43.787,Jolokia wrapper script removed.
+2025/05/19 02:18:43.788,Checking for existing payload file to remove...
+2025/05/19 02:18:43.794,Unavailability time measurement completed.
