@@ -15,10 +15,6 @@ def run_cmd(cmd, logger=FogLogger(name="error_logs.txt"), check=True, capture_ou
     except subprocess.CalledProcessError as e:
         # Print and log command output and error if capture_output is enabled.
         if capture_output:
-            print(f"Command failed: {cmd}")
-            print(f"STDERR: {e.stderr}")
-            print(f"STDOUT: {e.stdout}")
-
-            logger.log_all(f"Command failed: {cmd}\nSTDERR: {e.stderr}\nSTDOUT: {e.stdout}")
+            logger.log_all(f"Failed to execute '{cmd}'.\nSTDERR: {e.stderr}STDOUT: {e.stdout}")
         # Re-raise the exception to signal command failure.
         raise

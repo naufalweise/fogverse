@@ -3,88 +3,14 @@ import subprocess
 import time
 import yaml
 
-from experiments.constants import BOOTSTRAP_SERVER, NUM_RECORDS, TARGET_THROUGHPUT, TOPIC_NAME
-from experiments.utils.run_cmd import run_cmd
+from experiments.constants import BOOTSTRAP_SERVER, MESSAGE_SIZES, NUM_RECORDS, TOPIC_NAME
+from experiments.throughput import parse_consumer_perf_test, parse_prod_perf_test, run_consumer_test, run_producer_test
+from experiments.utils.cleanup import cleanup
+from experiments.utils.cluster_setup import setup_experiment_env
+from experiments.utils.generate_payload import generate_payload
 from fogverse.logger.fog import FogLogger
 
-logger = FogLogger(f"throughput_{int(time.time())}")
-
-def run_producer_test(logger=logger, bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
-    # Run the Kafka producer performance test using payload.txt and track progress.
-    cmd = (
-        "kafka/bin/kafka-producer-perf-test.sh "
-        f"--producer-props acks=all bootstrap.servers={bootstrap_server} "
-        f"--topic {topic_name} "
-        f"--num-records {num_records} "
-        "--payload-file payload.txt "
-        "--throughput -1 "
-    )
-    logger.log_all(f"Running producer with {num_records} records...")
-
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    output = []
-
-    running_total = 0
-    for line in process.stdout:
-        line = line.strip()
-        output.append(line)
-
-        match = re.match(r"(\d+)\s+records sent", line)
-        if match:
-            this_count = int(match.group(1))
-
-            if this_count == num_records:
-                logger.log_all("100% progress completed.")
-            else:
-                running_total += this_count
-                percent = int((running_total / num_records) * 100)
-                logger.log_all(f"{percent}% progress completed.")
-
-    process.wait()
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(process.returncode, cmd)
-
-    return "\n".join(output)
-
-def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS):
-    # Run the Kafka consumer performance test.
-    cmd = (
-        "kafka/bin/kafka-consumer-perf-test.sh "
-        f"--bootstrap-server {bootstrap_server} "
-        f"--topic {topic_name} "
-        f"--messages {num_records} "
-        "--show-detailed-stats"
-    )
-    logger.log_all(f"Running consumer with {num_records} records...")
-    result = run_cmd(cmd, capture_output=True)
-    return result.stdout
-
-def parse_prod_perf_test(output):
-    # For producer, take the last line with MB/sec in parentheses.
-    lines = output.strip().splitlines()
-    for line in reversed(lines):
-        match = re.search(r'\((\d+\.\d+) MB/sec\)', line)
-        if match:
-            return float(match.group(1))
-    return 0.0
-
-def parse_consumer_perf_test(output):
-    # For consumer, average MB.sec column, skipping the first row.
-    mb_sec_values = []
-    lines = output.strip().splitlines()
-    for line in lines:
-        if line.startswith('time,'):
-            continue  # Skip header.
-        fields = line.split(',')
-        try:
-            mb_sec = float(fields[3])  # MB.sec is the 4th column.
-            mb_sec_values.append(mb_sec)
-        except (IndexError, ValueError):
-            continue
-    if mb_sec_values:
-        return sum(mb_sec_values) / len(mb_sec_values)
-    else:
-        return 0.0
+logger = FogLogger(f"comparison_{int(time.time())}")
 
 def get_config(path):
     try:
@@ -118,7 +44,14 @@ def run_pb_script(params, algorithm):
         print(f"[{algorithm}] Unexpected output: {result.stdout.strip()}")
         return None, None
 
+import json
+import os
+from datetime import datetime
+
 def main():
+    results = {}
+    logger.log_all("Starting experiments comparing Kafka topic partitioning algorithms using Prof. Claudio's default values and benchmark values.")
+
     for config_path in ["default-cluster-config.yaml", "benchmark-cluster-config.yaml"]:
         config = get_config(config_path)
         if not config:
@@ -129,14 +62,75 @@ def main():
         if not isinstance(algorithms, list):
             algorithms = [algorithms]
 
-        for algo in algorithms:
-            for mbps in TARGET_THROUGHPUT:
-                throughput_bps = mbps * 1e6
-                params["T"] = throughput_bps
+        # Store result for this config.
+        config_name = os.path.splitext(os.path.basename(config_path))[0]
+        results[config_name] = {}
 
-                partitions, brokers = run_pb_script(params, algo)
-                if partitions and brokers:
-                    print(f"[{config_path}] {algo} @ {mbps} MB/s: Partitions={partitions}, Brokers={brokers}")
+        logger.log_all(f"Loading config from {config_path}...")
+        logger.log_all(json.dumps(config, indent=2))
+        logger.log_all(f"Config loaded successfully.")
+
+        for algorithm in algorithms:
+            logger.log_all(f"Running {algorithm} algorithm...")
+            partitions, brokers = run_pb_script(params, algorithm)
+            logger.log_all(f"Retrieved results from {algorithm} algorithm showing {partitions} partitions and {brokers} brokers.")
+
+            if not partitions or not brokers:
+                logger.log_all(f"Skipping due to invalid partition/broker output.")
+                continue
+
+            results[config_name][algorithm] = {}
+
+            for kb_size in MESSAGE_SIZES:
+                message_bytes = kb_size * 1_000
+                throughput_target_bps = params["T"]
+
+                logger.log_all(f"Testing at {throughput_target_bps:.2e} bytes/s with message size {kb_size} KB across {partitions} partitions and {brokers} brokers.")
+
+                setup_experiment_env(logger, num_partitions=partitions, num_brokers=brokers)
+                generate_payload(logger, min_kb=kb_size, max_kb=kb_size)
+
+                # Run producer and consumer.
+                producer_output = run_producer_test(
+                    logger=logger,
+                    record_size=message_bytes,
+                    throughput=throughput_target_bps,
+                    log_output=True,
+                    track_progress=False
+                )
+                producer_mbps, producer_latency = parse_prod_perf_test(producer_output)
+                logger.log_all(f"Production throughput is {producer_mbps:.4f} MB/s with latency of {producer_latency:.4f} ms.")
+
+                consumer_output = run_consumer_test(log_output=True)
+                consumer_mbps, consumer_latency = parse_consumer_perf_test(consumer_output)
+                logger.log_all(f"Consumption throughput is {consumer_mbps:.4f} MB/s with latency of {consumer_latency:.4f} ms.")
+
+                logger.log_all(f"Testing completed.")
+                # Store in results dict.
+                results[config_name][algorithm][f"{kb_size}KB"] = {
+                    "partitions": int(partitions),
+                    "brokers": int(brokers),
+                    "record_size_bytes": message_bytes,
+                    "throughput_target_bps": throughput_target_bps,
+                    "producer": {
+                        "throughput_MBps": producer_mbps,
+                        "latency_ms": producer_latency
+                    },
+                    "consumer": {
+                        "throughput_MBps": consumer_mbps,
+                        "latency_ms": consumer_latency
+                    }
+                }
+
+                cleanup(logger)
+
+    # Save results.
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = f"perf_results_{timestamp}.json"
+    with open(output_file, "w") as f:
+        json.dump(results, f, indent=2)
+
+    logger.log_all(f"Results saved to {output_file}.")
 
 if __name__ == "__main__":
     main()
