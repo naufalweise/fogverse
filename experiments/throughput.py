@@ -59,7 +59,6 @@ def run_producer_test(
     if process.returncode != 0:
         raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    logger.log_all("Producer test completed.")
     return "\n".join(output)
 
 def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS, log_output=False):
@@ -69,6 +68,7 @@ def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, 
         f"--bootstrap-server {bootstrap_server} "
         f"--topic {topic_name} "
         f"--messages {num_records} "
+        "--timeout 48000"
         "--show-detailed-stats"
     )
     logger.log_all(f"Running consumer with {num_records} records...")
@@ -87,7 +87,6 @@ def run_consumer_test(bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, 
     if process.returncode != 0:
         raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    logger.log_all("Consumer test completed.")
     return "\n".join(output)
 
 def parse_prod_perf_test(output):
@@ -136,7 +135,7 @@ def run_performance_tests():
     consumer_throughput = parse_consumer_perf_test(consumer_output)[0] * 1_000_000  # Convert from MB/s to bytes/s.
 
     logger.log_all(f"Production Throughput: {producer_throughput} bytes/s")
-    logger.log_all(f"Consumtion Throughput: {consumer_throughput} bytes/s")
+    logger.log_all(f"Consumption Throughput: {consumer_throughput} bytes/s")
 
     return producer_throughput, consumer_throughput
 
