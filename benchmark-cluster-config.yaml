@@ -9,6 +9,6 @@ partitioning_params:
   Hmax: 16384
   lr: 5.204066543438078e-3
   u: 6.71e-2
-  c: 200
+  c: 4
   r: 4
   B: 20

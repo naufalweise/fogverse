@@ -12,87 +12,116 @@ from fogverse.logger.fog import FogLogger
 
 logger = FogLogger(f"throughput_{int(time.time())}")
 
-def run_producer_test(
+def run_producer_test( 
     logger=logger,
     bootstrap_server=BOOTSTRAP_SERVER,
     topic_name=TOPIC_NAME,
     num_records=NUM_RECORDS,
     record_size=None,
     throughput=-1,
+    num_instances=1,
+    min_heap=KAFKA_HEAP_MIN,
+    max_heap=KAFKA_HEAP_MAX,
     log_output=False,
     track_progress=True
 ):
-    # Run the Kafka producer performance test using payload.txt and track progress.
-    cmd = (
-        "kafka/bin/kafka-producer-perf-test.sh "
-        f"--producer-props acks=all bootstrap.servers={bootstrap_server} "
-        f"--topic {topic_name} "
-        f"--num-records {num_records} "
-        f"{'--payload-file payload.txt' if record_size is None else f'--record-size {record_size}'} "
-        f"--throughput {throughput} "
-    )
-    logger.log_all(f"Running producer with {num_records} records...")
+    # Spawn multiple instances of producer test based on num_instances.
+    logger.log_all(f"Running {num_instances} producer instance(s) with total {num_records} records...")
 
+    per_instance_records = num_records // num_instances
+    per_instance_throughput = throughput // num_instances if throughput > 0 else -1
+
+    processes = []
     env = os.environ.copy()
-    env["KAFKA_HEAP_OPTS"] = f"{KAFKA_HEAP_MIN} {KAFKA_HEAP_MAX}"  # Adjust heap size as needed.
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
-    output = []
+    env["KAFKA_HEAP_OPTS"] = f"{min_heap} {max_heap}"
 
-    running_total = 0
-    for line in process.stdout:
-        line = line.strip()
-        if log_output: 
-            logger.log_all(line)
+    for i in range(num_instances):
+        cmd = (
+            "kafka/bin/kafka-producer-perf-test.sh "
+            f"--producer-props acks=all bootstrap.servers={bootstrap_server} "
+            f"--topic {topic_name} "
+            f"--num-records {per_instance_records} "
+            f"{'--payload-file payload.txt' if record_size is None else f'--record-size {record_size}'} "
+            f"--throughput {per_instance_throughput} "
+        )
+        logger.log_all(f"Launching producer instance {i + 1}...")
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
+        processes.append((i, process))
 
-        output.append(line)
+    total_output = []
+    for i, process in processes:
+        output = []
+        running_total = 0
+        for line in process.stdout:
+            line = line.strip()
+            if log_output:
+                logger.log_all(f"Producer {i + 1}: {line}")
+            output.append(line)
 
-        if track_progress:
-            match = re.match(r"(\d+)\s+records sent", line)
-            if match:
-                this_count = int(match.group(1))
-
-                if this_count == num_records:
-                    logger.log_all("100% progress completed.")
-                else:
+            if track_progress:
+                match = re.match(r"(\d+)\s+records sent", line)
+                if match:
+                    this_count = int(match.group(1))
                     running_total += this_count
-                    percent = int((running_total / num_records) * 100)
-                    logger.log_all(f"{percent}% progress completed.")
+                    percent = int((running_total / per_instance_records) * 100)
+                    logger.log_all(f"Producer {i + 1}: {percent}% progress completed.")
 
-    process.wait()
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(process.returncode, cmd)
+        process.wait()
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    return "\n".join(output)
+        total_output.extend(output)
 
-def run_consumer_test(logger, bootstrap_server=BOOTSTRAP_SERVER, topic_name=TOPIC_NAME, num_records=NUM_RECORDS, log_output=False):
-    # Run the Kafka consumer performance test.
-    cmd = (
-        "kafka/bin/kafka-consumer-perf-test.sh "
-        f"--bootstrap-server {bootstrap_server} "
-        f"--topic {topic_name} "
-        f"--messages {num_records} "
-        "--timeout 72000 "
-        "--show-detailed-stats"
-    )
-    logger.log_all(f"Running consumer with {num_records} records...")
+    return "\n".join(total_output)
 
+def run_consumer_test(
+    logger=logger,
+    bootstrap_server=BOOTSTRAP_SERVER,
+    topic_name=TOPIC_NAME,
+    num_records=NUM_RECORDS,
+    num_instances=1,
+    min_heap=KAFKA_HEAP_MIN,
+    max_heap=KAFKA_HEAP_MAX,
+    log_output=False
+):
+    # Spawn multiple instances of consumer test based on num_instances.
+    logger.log_all(f"Running {num_instances} consumer instance(s) with total {num_records} records...")
+
+    per_instance_records = num_records // num_instances
+    processes = []
     env = os.environ.copy()
-    env["KAFKA_HEAP_OPTS"] = "-Xms2g -Xmx16g"  # Adjust heap size as needed.
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
-    output = []
+    env["KAFKA_HEAP_OPTS"] = f"{min_heap} {max_heap}"
 
-    for line in process.stdout:
-        line = line.strip()
-        if log_output:
-            logger.log_all(line)
+    for i in range(num_instances):
+        cmd = (
+            "kafka/bin/kafka-consumer-perf-test.sh "
+            f"--bootstrap-server {bootstrap_server} "
+            f"--topic {topic_name} "
+            f"--messages {per_instance_records} "
+            "--timeout 72000 "
+            "--group test-group "
+            "--show-detailed-stats"
+        )
+        logger.log_all(f"Launching consumer instance {i + 1}...")
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
+        processes.append((i, process))
 
-        output.append(line)
+    total_output = []
+    for i, process in processes:
+        output = []
+        for line in process.stdout:
+            line = line.strip()
+            if log_output:
+                logger.log_all(f"Consumer {i + 1}: {line}")
+            output.append(line)
 
-    process.wait()
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(process.returncode, cmd)
+        process.wait()
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    return "\n".join(output)
+        total_output.extend(output)
+
+    return "\n".join(total_output)
 
 def parse_prod_perf_test(output):
     lines = output.strip().splitlines()

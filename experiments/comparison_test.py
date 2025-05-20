@@ -2,7 +2,7 @@ import subprocess
 import time
 import yaml
 
-from experiments.constants import MESSAGE_SIZES, NUM_RECORDS
+from experiments.constants import MESSAGE_SIZES, NUM_INSTANCES, NUM_RECORDS
 from experiments.throughput import parse_consumer_perf_test, parse_prod_perf_test, run_consumer_test, run_producer_test
 from experiments.utils.cleanup import cleanup
 from experiments.utils.cluster_setup import setup_experiment_env
@@ -83,7 +83,7 @@ def main():
             partitions, brokers = run_pb_script(params, algorithm)
             logger.log_all(f"Retrieved results from {algorithm} algorithm showing {partitions} partitions and {brokers} brokers.")
 
-            if not partitions or not brokers:
+            if int(partitions) <= 0 or int(brokers) <= 0:
                 logger.log_all(f"Skipping due to invalid partition/broker output.")
                 continue
 
@@ -114,11 +114,18 @@ def main():
                 # Generate test payloads with fixed message size (min = max).
                 generate_payload(logger, min_kb=kb_size, max_kb=kb_size)
 
+                producer_count=NUM_INSTANCES
+                logger.log_all(f"Using {producer_count} producer instances.")
+                consumer_count=NUM_INSTANCES
+                logger.log_all(f"Using {consumer_count} consumer instances.")
+
                 # Run producer performance test.
                 producer_output = run_producer_test(
                     logger=logger,
+                    num_records=adjusted_num_records,
                     record_size=(kb_size * 1_000),  # Convert KB to bytes.
                     throughput=target_throughput_bps,
+                    num_instances=producer_count,
                     log_output=True,
                     track_progress=False
                 )
@@ -131,6 +138,7 @@ def main():
                 consumer_output = run_consumer_test(
                     logger,
                     num_records=adjusted_num_records,
+                    num_instances=consumer_count,
                     log_output=True
                 )
                 consumer_mbps, consumer_latency = parse_consumer_perf_test(consumer_output)
@@ -145,9 +153,11 @@ def main():
 
                 # Store results in dictionary for later analysis/export.
                 results[config_name][algorithm][f"{kb_size}KB"] = {
+                    "producer_instances": producer_count,
+                    "consumer_instances": consumer_count,
                     "partitions": int(partitions),
                     "brokers": int(brokers),
-                    "storage_gb": (adjusted_num_records * kb_size) / 1_000_000,  # Total test volume in GB.
+                    "data_volume_gb": (adjusted_num_records * kb_size) / 1_000_000,  # Total test volume in GB.
                     "target_throughput_mbps": target_throughput_mbps,
                     "producer": {
                         "throughput_mbps": producer_mbps,
@@ -166,7 +176,7 @@ def main():
 
     # Generate timestamped filename to avoid overwriting old results.
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = f"perf_results_{timestamp}.json"
+    output_file = f"comparison_results_{timestamp}.json"
 
     # Write all collected test results to JSON file for later analysis.
     with open(output_file, "w") as f:
