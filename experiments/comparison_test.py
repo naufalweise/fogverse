@@ -139,7 +139,7 @@ def main():
                     log_output=True,
                     track_progress=False
                 )
-                producer_mbps, producer_latency = parse_prod_perf_test(producer_output)
+                producer_mbps, producer_latency = parse_prod_perf_test(producer_output, logger)
                 logger.log_all(
                     f"Production throughput is {producer_mbps:.4f} MB/s with latency of {producer_latency:.4f} ms."
                 )
@@ -152,7 +152,7 @@ def main():
                     num_instances=consumer_count,
                     log_output=True
                 )
-                consumer_mbps, consumer_fetch = parse_consumer_perf_test(consumer_output)
+                consumer_mbps, consumer_fetch = parse_consumer_perf_test(consumer_output, logger)
                 logger.log_all(
                     f"Consumption throughput is {consumer_mbps:.4f} MB/s with fetch of {consumer_fetch:.4f} ms."
                 )

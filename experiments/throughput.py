@@ -2,6 +2,7 @@ import concurrent.futures
 import os
 import re
 import subprocess
+import sys
 import time
 
 from experiments.constants import BOOTSTRAP_SERVER, KAFKA_HEAP_MAX, KAFKA_HEAP_MIN, NUM_RECORDS, TOPIC_NAME
@@ -54,9 +55,10 @@ def run_producer_test(
         running_total = 0
         for line in process.stdout:
             line = line.strip()
-            if log_output:
-                logger.log_all(f"Producer {i + 1}: {line}")
-            output.append(line)
+            formatted_line = f"Producer {i + 1}: {line}"
+
+            if log_output: logger.log_all(formatted_line)
+            output.append(formatted_line)
 
             if track_progress:
                 match = re.match(r"(\d+)\s+records sent", line)
@@ -110,9 +112,10 @@ def run_consumer_test(
         output = []
         for line in process.stdout:
             line = line.strip()
-            if log_output:
-                logger.log_all(f"Consumer {i + 1}: {line}")
-            output.append(line)
+            formatted_line = f"Consumer {i + 1}: {line}"
+
+            if log_output: logger.log_all(formatted_line)
+            output.append(formatted_line)
 
         process.wait()
         if process.returncode != 0:
@@ -122,7 +125,7 @@ def run_consumer_test(
 
     return "\n".join(total_output)
 
-def parse_prod_perf_test(output):
+def parse_prod_perf_test(output, logger=logger):
     # Holds per-instance (throughput MB/sec, average latency ms) tuples.
     instance_summaries = {}
 
@@ -145,16 +148,18 @@ def parse_prod_perf_test(output):
                 # Log unparseable lines for visibility/debugging.
                 logger.log_all(f"No match found in line:\n{line}")
 
-    logger.log_all(f"Parsed producer performance data: {instance_summaries}")
+    logger.log_all(f"Parsed producer performance data (throughput, latency): {instance_summaries}")
 
-    # Aggregate total throughput and total latency across all producer instances.
+    # Aggregate total throughput and average latency across all producer instances.
     total_throughput = sum(t for t, _ in instance_summaries.values())
-    total_latency = sum(l for _, l in instance_summaries.values())
 
-    return total_throughput, total_latency
+    latencies = [l for _, l in instance_summaries.values()]
+    avg_latency = sum(latencies) / len(latencies) if latencies else sys.maxsize
+
+    return total_throughput, avg_latency
 
 
-def parse_consumer_perf_test(output):
+def parse_consumer_perf_test(output, logger=logger):
     # Holds per-instance (throughput MB/sec, fetch time ms) tuples.
     instance_results = {}
 
@@ -187,13 +192,15 @@ def parse_consumer_perf_test(output):
         except ValueError:
             continue  # Skip if parsing any field fails.
 
-    logger.log_all(f"Parsed consumer performance data: {instance_results}")
+    logger.log_all(f"Parsed consumer performance data (throughput, fetch time): {instance_results}")
 
-    # Aggregate total throughput and fetch time across all consumer instances.
+    # Aggregate total throughput and average fetch time across all consumer instances.
     total_throughput = sum(t for t, _ in instance_results.values())
-    total_fetch_time = sum(f for _, f in instance_results.values())
 
-    return total_throughput, total_fetch_time
+    fetch_latencies = [l for _, l in instance_results.values()]
+    avg_fetch_time = sum(fetch_latencies) / len(fetch_latencies) if fetch_latencies else sys.maxsize
+
+    return total_throughput, avg_fetch_time
 
 def run_performance_tests():
     # Run producer and consumer tests concurrently and collect throughput.
