@@ -69,7 +69,23 @@ def main():
 
         # Use file name (without extension) as config key.
         config_name = os.path.splitext(os.path.basename(config_path))[0]
-        results[config_name] = {}
+
+        # Set instances of producers and consumers.
+        producer_count=NUM_INSTANCES
+        consumer_count=params["c"]
+
+        # Convert target throughput from bytes to MB/s.
+        target_throughput_bps = params["T"]
+        target_throughput_mbps = target_throughput_bps / 1_000_000
+
+        total_test_kb = max(MESSAGE_SIZES) * NUM_RECORDS  # Fixed test volume across all scenarios.
+
+        results[config_name] = {
+            "producer_count": producer_count,
+            "consumer_count": consumer_count,
+            "test_volume_gb": total_test_kb / 1_000_000,  # Total test payload size in GB.
+            "target_throughput_mbps": target_throughput_mbps,
+        }
 
         logger.log_all(f"Loading config from {config_path}...")
         logger.log_all("\n" + json.dumps(config, indent=2))
@@ -87,15 +103,14 @@ def main():
                 logger.log_all(f"Skipping due to invalid partition/broker output.")
                 continue
 
-            results[config_name][algorithm] = {}
+            results[config_name][algorithm] = {
+                "partitions": int(partitions),
+                "brokers": int(brokers),
+            }
 
             # Iterate through different message sizes (in KB).
             for kb_size in MESSAGE_SIZES:
-                # Scale number of records to send the same *total* data volume across tests.
-                scaling_factor = max(MESSAGE_SIZES) / kb_size
-                adjusted_num_records = int(NUM_RECORDS * scaling_factor)
-
-                target_throughput_bps = params["T"]
+                records_per_test = total_test_kb // kb_size  # Adjust record count to keep payload volume fixed.
 
                 logger.log_all(
                     f"Testing config '{config_name}' with algorithm '{algorithm}' "
@@ -114,14 +129,11 @@ def main():
                 # Generate test payloads with fixed message size (min = max).
                 generate_payload(logger, min_kb=kb_size, max_kb=kb_size)
 
-                producer_count=NUM_INSTANCES
-                consumer_count=params["c"]
-
                 # Run producer performance test.
                 logger.log_all(f"Using {producer_count} producer instances.")
                 producer_output = run_producer_test(
                     logger=logger,
-                    num_records=adjusted_num_records,
+                    num_records=records_per_test,
                     record_size=(kb_size * 1_000),  # Convert KB to bytes.
                     throughput=target_throughput_bps,
                     num_instances=producer_count,
@@ -137,28 +149,20 @@ def main():
                 logger.log_all(f"Using {consumer_count} consumer instances.")
                 consumer_output = run_consumer_test(
                     logger,
-                    num_records=adjusted_num_records,
+                    num_records=records_per_test - 1024,  # Slightly under-provision to avoid consumer hang from expecting unproduced messages.
                     num_instances=consumer_count,
                     log_output=True
                 )
-                consumer_mbps, consumer_latency = parse_consumer_perf_test(consumer_output)
+                consumer_mbps, consumer_fetch = parse_consumer_perf_test(consumer_output)
                 logger.log_all(
-                    f"Consumption throughput is {consumer_mbps:.4f} MB/s with latency of {consumer_latency:.4f} ms."
+                    f"Consumption throughput is {consumer_mbps:.4f} MB/s with fetch of {consumer_fetch:.4f} ms."
                 )
 
                 logger.log_all(f"Testing completed.")
 
-                # Convert target throughput from bytes to MB/s.
-                target_throughput_mbps = target_throughput_bps / 1_000_000
-
                 # Store results in dictionary for later analysis/export.
                 results[config_name][algorithm][f"{kb_size}KB"] = {
-                    "producer_count": producer_count,
-                    "consumer_count": consumer_count,
-                    "partitions": int(partitions),
-                    "brokers": int(brokers),
-                    "data_volume_gb": (adjusted_num_records * kb_size) / 1_000_000,  # Total test volume in GB.
-                    "target_throughput_mbps": target_throughput_mbps,
+                    "records_sent": records_per_test,
                     "producer": {
                         "throughput_mbps": producer_mbps,
                         "latency_ms": producer_latency,
@@ -166,7 +170,7 @@ def main():
                     },
                     "consumer": {
                         "throughput_mbps": consumer_mbps,
-                        "latency_ms": consumer_latency,
+                        "fetch_ms": consumer_fetch,
                         "status": "success" if consumer_mbps >= target_throughput_mbps else "failure"
                     }
                 }

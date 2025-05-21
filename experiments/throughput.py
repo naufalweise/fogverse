@@ -124,36 +124,70 @@ def run_consumer_test(
     return "\n".join(total_output)
 
 def parse_prod_perf_test(output):
-    lines = output.strip().splitlines()
-    for line in reversed(lines):
-        throughput_match = re.search(r'(\d+\.\d+)\s+MB/sec', line)
-        latency_match = re.search(r'(\d+\.\d+)\s+ms avg latency', line)
-        if throughput_match and latency_match:
-            mb_per_sec = float(throughput_match.group(1))
-            avg_latency_ms = float(latency_match.group(1))
-            return mb_per_sec, avg_latency_ms
-    return 0.0, 0.0
-
-def parse_consumer_perf_test(output):
-    mb_sec_vals = []
-    fetch_times = []
+    instance_data = {}  # {instance_id: [(throughput, latency), ...]}.
 
     for line in output.strip().splitlines():
-        if line.startswith('time,'):
-            continue  # Skip header.
+        match = re.match(r"Producer (\d+): .*?(\d+\.\d+)\s+MB/sec.*?(\d+\.\d+)\s+ms avg latency", line)
+        if match:
+            instance = int(match.group(1))
+            throughput = float(match.group(2))
+            latency = float(match.group(3))
+            instance_data.setdefault(instance, []).append((throughput, latency))
 
-        fields = line.split(',')
+    avg_throughputs = []
+    avg_latencies = []
+
+    for records in instance_data.values():
+        if records:
+            avg_throughput = sum(t for t, _ in records) / len(records)
+            avg_latency = sum(l for _, l in records) / len(records)
+            avg_throughputs.append(avg_throughput)
+            avg_latencies.append(avg_latency)
+
+    total_avg_throughput = sum(avg_throughputs) if avg_throughputs else 0.0
+    total_avg_latency = sum(avg_latencies) if avg_latencies else 0.0
+
+    return total_avg_throughput, total_avg_latency
+
+def parse_consumer_perf_test(output):
+    instance_data = {}  # {instance_id: [(mb_sec, fetch_time), ...]}
+
+    for line in output.strip().splitlines():
+        if not line.startswith("Consumer"):
+            continue
+
+        match = re.match(r"Consumer (\d+): (.*)", line)
+        if not match:
+            continue
+
+        instance_id = int(match.group(1))
+        data_line = match.group(2)
+
+        if data_line.startswith("start.time"):
+            continue  # Skip headers
+
+        fields = data_line.split(',')
         try:
-            mb_sec_vals.append(float(fields[3]))  # MB.sec is the 4th column.
-            fetch_times.append(float(fields[7]))  # fetch time (ms) is the 8th column.
+            mb_sec = float(fields[3])  # MB/sec.
+            fetch_time = float(fields[7])  # fetch time in ms.
+            instance_data.setdefault(instance_id, []).append((mb_sec, fetch_time))
         except (IndexError, ValueError):
-            continue  # skip bad lines.
+            continue
 
-    # Compute averages (0.0 if no data).
-    avg_mb = sum(mb_sec_vals) / len(mb_sec_vals) if mb_sec_vals else 0.0
-    avg_fetch = sum(fetch_times) / len(fetch_times) if fetch_times else 0.0
+    avg_throughputs = []
+    avg_fetch_latencies = []
 
-    return avg_mb, avg_fetch
+    for records in instance_data.values():
+        if records:
+            avg_throughput = sum(t for t, _ in records) / len(records)
+            avg_fetch = sum(l for _, l in records) / len(records)
+            avg_throughputs.append(avg_throughput)
+            avg_fetch_latencies.append(avg_fetch)
+
+    total_avg_throughput = sum(avg_throughputs) if avg_throughputs else 0.0
+    total_avg_fetch = sum(avg_fetch_latencies) if avg_fetch_latencies else 0.0
+
+    return total_avg_throughput, total_avg_fetch
 
 def run_performance_tests():
     # Run producer and consumer tests concurrently and collect throughput.
