@@ -21,4 +21,4 @@ MBEAN_PRODUCE_REMOTETIME = "kafka.network:type=RequestMetrics,name=RemoteTimeMs,
 MESSAGE_SIZES = [1, 100]  # Message sizes in KB.
 NUM_INSTANCES = 4  # Number of client instances to run.
 KAFKA_HEAP_MIN = "-Xms2g"
-KAFKA_HEAP_MAX = "-Xmx16g"
+KAFKA_HEAP_MAX = "-Xmx4g"

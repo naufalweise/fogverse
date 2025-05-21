@@ -115,11 +115,10 @@ def main():
                 generate_payload(logger, min_kb=kb_size, max_kb=kb_size)
 
                 producer_count=NUM_INSTANCES
-                logger.log_all(f"Using {producer_count} producer instances.")
-                consumer_count=NUM_INSTANCES
-                logger.log_all(f"Using {consumer_count} consumer instances.")
+                consumer_count=params["c"]
 
                 # Run producer performance test.
+                logger.log_all(f"Using {producer_count} producer instances.")
                 producer_output = run_producer_test(
                     logger=logger,
                     num_records=adjusted_num_records,
@@ -135,6 +134,7 @@ def main():
                 )
 
                 # Run consumer performance test.
+                logger.log_all(f"Using {consumer_count} consumer instances.")
                 consumer_output = run_consumer_test(
                     logger,
                     num_records=adjusted_num_records,
@@ -153,8 +153,8 @@ def main():
 
                 # Store results in dictionary for later analysis/export.
                 results[config_name][algorithm][f"{kb_size}KB"] = {
-                    "producer_instances": producer_count,
-                    "consumer_instances": consumer_count,
+                    "producer_count": producer_count,
+                    "consumer_count": consumer_count,
                     "partitions": int(partitions),
                     "brokers": int(brokers),
                     "data_volume_gb": (adjusted_num_records * kb_size) / 1_000_000,  # Total test volume in GB.
