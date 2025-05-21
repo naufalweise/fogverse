@@ -99,8 +99,7 @@ def run_consumer_test(
             f"--topic {topic_name} "
             f"--messages {per_instance_records} "
             "--timeout 72000 "
-            "--group test-group "
-            "--show-detailed-stats"
+            "--group test-group"
         )
         logger.log_all(f"Launching consumer instance {i + 1}...")
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
@@ -124,70 +123,77 @@ def run_consumer_test(
     return "\n".join(total_output)
 
 def parse_prod_perf_test(output):
-    instance_data = {}  # {instance_id: [(throughput, latency), ...]}.
+    # Holds per-instance (throughput MB/sec, average latency ms) tuples.
+    instance_summaries = {}
 
     for line in output.strip().splitlines():
-        match = re.match(r"Producer (\d+): .*?(\d+\.\d+)\s+MB/sec.*?(\d+\.\d+)\s+ms avg latency", line)
-        if match:
-            instance = int(match.group(1))
-            throughput = float(match.group(2))
-            latency = float(match.group(3))
-            instance_data.setdefault(instance, []).append((throughput, latency))
+        # Match lines containing per-producer throughput and latency stats.
+        if "Producer" in line and "th" in line:  # "th" hints at presence of a summary line.
+            match = re.match(
+                r"Producer (\d+): .*?(\d+\.\d+)\s+records/sec\s+\((\d+\.\d+)\s+MB/sec\).*?(\d+\.\d+)\s+ms avg latency",
+                line
+            )
+            if match:
+                instance_id = int(match.group(1))
+                throughput = float(match.group(3))  # The index for MB/sec.
+                latency = float(match.group(4))  # The index for avg latency.
 
-    avg_throughputs = []
-    avg_latencies = []
+                # Only keep the first valid stat line per producer instance.
+                if instance_id not in instance_summaries:
+                    instance_summaries[instance_id] = (throughput, latency)
+            else:
+                # Log unparseable lines for visibility/debugging.
+                logger.log_all(f"No match found in line:\n{line}")
 
-    for records in instance_data.values():
-        if records:
-            avg_throughput = sum(t for t, _ in records) / len(records)
-            avg_latency = sum(l for _, l in records) / len(records)
-            avg_throughputs.append(avg_throughput)
-            avg_latencies.append(avg_latency)
+    logger.log_all(f"Parsed producer performance data: {instance_summaries}")
 
-    total_avg_throughput = sum(avg_throughputs) if avg_throughputs else 0.0
-    total_avg_latency = sum(avg_latencies) if avg_latencies else 0.0
+    # Aggregate total throughput and total latency across all producer instances.
+    total_throughput = sum(t for t, _ in instance_summaries.values())
+    total_latency = sum(l for _, l in instance_summaries.values())
 
-    return total_avg_throughput, total_avg_latency
+    return total_throughput, total_latency
+
 
 def parse_consumer_perf_test(output):
-    instance_data = {}  # {instance_id: [(mb_sec, fetch_time), ...]}
+    # Holds per-instance (throughput MB/sec, fetch time ms) tuples.
+    instance_results = {}
+
+    # Match start of a consumer stat line.
+    pattern = re.compile(r"Consumer\s+(\d+):\s+(.*)")
 
     for line in output.strip().splitlines():
-        if not line.startswith("Consumer"):
-            continue
-
-        match = re.match(r"Consumer (\d+): (.*)", line)
+        match = pattern.match(line)
         if not match:
             continue
 
         instance_id = int(match.group(1))
         data_line = match.group(2)
 
+        # Skip header line which often starts with "start.time".
         if data_line.startswith("start.time"):
-            continue  # Skip headers
-
-        fields = data_line.split(',')
-        try:
-            mb_sec = float(fields[3])  # MB/sec.
-            fetch_time = float(fields[7])  # fetch time in ms.
-            instance_data.setdefault(instance_id, []).append((mb_sec, fetch_time))
-        except (IndexError, ValueError):
             continue
 
-    avg_throughputs = []
-    avg_fetch_latencies = []
+        fields = data_line.split(',')
+        if len(fields) < 8:
+            continue  # Skip malformed lines with missing fields.
 
-    for records in instance_data.values():
-        if records:
-            avg_throughput = sum(t for t, _ in records) / len(records)
-            avg_fetch = sum(l for _, l in records) / len(records)
-            avg_throughputs.append(avg_throughput)
-            avg_fetch_latencies.append(avg_fetch)
+        try:
+            mb_sec = float(fields[3])  # The index for MB/sec.
+            fetch_time = float(fields[7])  # The index for fetch time.
 
-    total_avg_throughput = sum(avg_throughputs) if avg_throughputs else 0.0
-    total_avg_fetch = sum(avg_fetch_latencies) if avg_fetch_latencies else 0.0
+            # Only keep the first valid stat per consumer instance.
+            if instance_id not in instance_results:
+                instance_results[instance_id] = (mb_sec, fetch_time)
+        except ValueError:
+            continue  # Skip if parsing any field fails.
 
-    return total_avg_throughput, total_avg_fetch
+    logger.log_all(f"Parsed consumer performance data: {instance_results}")
+
+    # Aggregate total throughput and fetch time across all consumer instances.
+    total_throughput = sum(t for t, _ in instance_results.values())
+    total_fetch_time = sum(f for _, f in instance_results.values())
+
+    return total_throughput, total_fetch_time
 
 def run_performance_tests():
     # Run producer and consumer tests concurrently and collect throughput.

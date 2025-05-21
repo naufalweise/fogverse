@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  kafka-node-0:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    container_name: test-container-0
+    environment:
+      CLUSTER_ID: "test-cluster"
+      KAFKA_NODE_ID: 0
+      KAFKA_PROCESS_ROLES: "controller,broker"
+      KAFKA_LISTENERS: "INTERNAL://:9090,EXTERNAL://:9092,CONTROLLER://:9094"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://test-container-0:9090,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "0@kafka-node-0:9094"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+    labels:
+      cluster_id: "test-cluster"
+    ports:
+      - "9090:9090"
+      - "9092:9092"
+      - "9094:9094"
+      - "9096:8778"
+    volumes:
+      - kafka_test_data_0:/var/lib/kafka/data
+    mem_limit: 2g
+    cpus: 1.0
+    blkio_config:
+      device_read_bps:
+        - path: /dev/dm-0
+          rate: 8388608
+      device_write_bps:
+        - path: /dev/dm-0
+          rate: 8388608
+    ulimits:
+      nofile:
+        soft: 16384
+        hard: 16384
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8778/jolokia/read/kafka.server:type=BrokerState/BrokerState || exit 1"]
+      interval: 8s
+      timeout: 4s
+      retries: 8
+      start_period: 20s
+
+volumes:
+  kafka_test_data_0:
+    labels:
+      cluster_id: "test-cluster"

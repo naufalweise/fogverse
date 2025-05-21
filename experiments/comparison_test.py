@@ -135,7 +135,6 @@ def main():
                     logger=logger,
                     num_records=records_per_test,
                     record_size=(kb_size * 1_000),  # Convert KB to bytes.
-                    throughput=target_throughput_bps,
                     num_instances=producer_count,
                     log_output=True,
                     track_progress=False
