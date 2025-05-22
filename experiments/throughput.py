@@ -46,7 +46,7 @@ def run_producer_test(
             f"--throughput {per_instance_throughput} "
         )
         logger.log_all(f"Launching producer instance {i + 1}...")
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         processes.append((i, process))
 
     total_output = []
@@ -66,6 +66,7 @@ def run_producer_test(
                     this_count = int(match.group(1))
                     running_total += this_count
                     percent = int((running_total / per_instance_records) * 100)
+                    percent = min(percent, 100)
                     logger.log_all(f"Producer {i + 1}: {percent}% progress completed.")
 
         process.wait()
@@ -104,7 +105,7 @@ def run_consumer_test(
             "--group test-group"
         )
         logger.log_all(f"Launching consumer instance {i + 1}...")
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         processes.append((i, process))
 
     total_output = []

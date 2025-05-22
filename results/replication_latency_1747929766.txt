@@ -1,0 +1,63 @@
+[2025-05-22 16:04:09,968] Replication latency measurement initiated.
+[2025-05-22 16:04:09,969] Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+[2025-05-22 16:04:10,041] All Docker containers and volumes with cluster ID 'test-cluster' removed.
+[2025-05-22 16:04:10,088] Generating Docker Compose configuration...
+[2025-05-22 16:04:10,106] Docker Compose configuration generated with 3 broker(s).
+[2025-05-22 16:04:10,106] Starting Kafka services...
+[2025-05-22 16:04:11,571] Kafka services started.
+[2025-05-22 16:04:11,571] Waiting for containers with cluster ID 'test-cluster' to start...
+[2025-05-22 16:04:11,598] All containers with cluster ID 'test-cluster' are up and running.
+[2025-05-22 16:04:11,598] Creating Kafka topic 'test-topic'...
+[2025-05-22 16:04:23,922] Kafka topic 'test-topic' created with 1 partition(s).
+[2025-05-22 16:04:23,923] Waiting for topic 'test-topic' to be ready...
+[2025-05-22 16:04:25,344] Topic 'test-topic' is ready.
+[2025-05-22 16:04:25,344] Generating payload file...
+[2025-05-22 16:04:25,351] Generated payload 'payload.txt' from 1KB to 100KB in 1KB steps.
+[2025-05-22 16:04:25,351] Running 1 producer instance(s) with total 65536 records...
+[2025-05-22 16:04:25,352] Launching producer instance 1...
+[2025-05-22 16:04:31,160] Producer 1: 1% progress completed.
+[2025-05-22 16:04:36,162] Producer 1: 3% progress completed.
+[2025-05-22 16:04:41,162] Producer 1: 7% progress completed.
+[2025-05-22 16:04:46,431] Producer 1: 10% progress completed.
+[2025-05-22 16:04:51,448] Producer 1: 13% progress completed.
+[2025-05-22 16:04:56,455] Producer 1: 15% progress completed.
+[2025-05-22 16:05:01,456] Producer 1: 17% progress completed.
+[2025-05-22 16:05:06,458] Producer 1: 19% progress completed.
+[2025-05-22 16:05:11,762] Producer 1: 21% progress completed.
+[2025-05-22 16:05:16,766] Producer 1: 23% progress completed.
+[2025-05-22 16:05:21,900] Producer 1: 24% progress completed.
+[2025-05-22 16:05:26,900] Producer 1: 27% progress completed.
+[2025-05-22 16:05:32,141] Producer 1: 29% progress completed.
+[2025-05-22 16:05:37,157] Producer 1: 34% progress completed.
+[2025-05-22 16:05:42,158] Producer 1: 43% progress completed.
+[2025-05-22 16:05:47,158] Producer 1: 50% progress completed.
+[2025-05-22 16:05:52,158] Producer 1: 60% progress completed.
+[2025-05-22 16:05:57,268] Producer 1: 64% progress completed.
+[2025-05-22 16:06:02,270] Producer 1: 67% progress completed.
+[2025-05-22 16:06:07,500] Producer 1: 70% progress completed.
+[2025-05-22 16:06:12,703] Producer 1: 76% progress completed.
+[2025-05-22 16:06:19,498] Producer 1: 79% progress completed.
+[2025-05-22 16:06:24,498] Producer 1: 82% progress completed.
+[2025-05-22 16:06:29,727] Producer 1: 85% progress completed.
+[2025-05-22 16:06:35,786] Producer 1: 88% progress completed.
+[2025-05-22 16:06:42,211] Producer 1: 92% progress completed.
+[2025-05-22 16:06:47,212] Producer 1: 96% progress completed.
+[2025-05-22 16:06:52,213] Producer 1: 98% progress completed.
+[2025-05-22 16:06:54,198] Producer 1: 100% progress completed.
+[2025-05-22 16:06:55,496] Replication latency from http://localhost:9116/jolokia: 0.0011 second(s)
+[2025-05-22 16:06:55,497] Average replication latency: 0.0011 second(s)
+[2025-05-22 16:06:55,497] Removing all Docker containers and volumes with cluster ID 'test-cluster'...
+[2025-05-22 16:07:32,751] All Docker containers and volumes with cluster ID 'test-cluster' removed.
+[2025-05-22 16:07:32,763] Removing Docker image fogverse-kafka-node-4 (da3936c45a02)...
+[2025-05-22 16:07:32,779] Docker image fogverse-kafka-node-4 (da3936c45a02) Removed.
+[2025-05-22 16:07:32,779] Removing Docker image fogverse-kafka-node-2 (66090b32735f)...
+[2025-05-22 16:07:32,793] Docker image fogverse-kafka-node-2 (66090b32735f) Removed.
+[2025-05-22 16:07:32,793] Removing Docker image fogverse-kafka-node-0 (1fcda3177426)...
+[2025-05-22 16:07:32,806] Docker image fogverse-kafka-node-0 (1fcda3177426) Removed.
+[2025-05-22 16:07:32,806] Checking for existing Docker Compose configuration to remove...
+[2025-05-22 16:07:32,806] Docker Compose configuration removed.
+[2025-05-22 16:07:32,806] Checking for existing Jolokia wrapper script to remove...
+[2025-05-22 16:07:32,806] Jolokia wrapper script removed.
+[2025-05-22 16:07:32,806] Checking for existing payload file to remove...
+[2025-05-22 16:07:32,806] Payload file removed.
+[2025-05-22 16:07:32,806] Replication latency measurement completed.

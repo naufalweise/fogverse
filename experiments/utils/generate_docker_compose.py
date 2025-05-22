@@ -58,17 +58,17 @@ def generate_docker_compose(n, base_port=BASE_PORT):
       - {VOLUME_PREFIX}_{node_id}:/var/lib/kafka/data
     mem_limit: 2g
     cpus: 1.0
-    blkio_config:
-      device_read_bps:
-        - path: /dev/dm-0
-          rate: {DISK_IO_LIMIT}
-      device_write_bps:
-        - path: /dev/dm-0
-          rate: {DISK_IO_LIMIT}
-    ulimits:
-      nofile:
-        soft: {OPEN_FILES_LIMIT}
-        hard: {OPEN_FILES_LIMIT}
+    # blkio_config:
+    #   device_read_bps:
+    #     - path: /dev/dm-0
+    #       rate: {DISK_IO_LIMIT}
+    #   device_write_bps:
+    #     - path: /dev/dm-0
+    #       rate: {DISK_IO_LIMIT}
+    # ulimits:
+    #   nofile:
+    #     soft: {OPEN_FILES_LIMIT}
+    #     hard: {OPEN_FILES_LIMIT}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:{JOLOKIA_PORT_INTERNAL}/jolokia/read/kafka.server:type=BrokerState/BrokerState || exit 1"]
       interval: 8s
