@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kafka-client
+  labels:
+    app: kafka-client
+spec:
+  containers:
+    - name: kafka-client-container
+      image: confluentinc/cp-kafka-client:7.5.0 # Using a common Kafka client image
+      command: ["tail", "-f", "/dev/null"] # Keep the container running indefinitely
+      env:
+        - name: KAFKA_BROKERS
+          value: "your-kafka-brokers-service:9092" # Replace with your Kafka service address
+    # Add resource requests/limits if needed for your client operations
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "4"
+          memory: "4Gi"
