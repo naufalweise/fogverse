@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: kafka-client-container
-      image: confluentinc/cp-kafka-client:7.5.0 # Using a common Kafka client image
+      image: confluentinc/cp-kafka:7.5.0 # Using a common Kafka client image
       command: ["tail", "-f", "/dev/null"] # Keep the container running indefinitely
       env:
         - name: KAFKA_BROKERS
