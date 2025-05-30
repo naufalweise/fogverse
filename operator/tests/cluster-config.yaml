@@ -1,0 +1,14 @@
+topics: [ 'my-topic-1']
+partitioning_params:
+  algorithm: 'BroMin'
+  T: 1.6e+7
+  L: 0.2
+  U: 2
+  Tp: 6.955e+7
+  Tc: 6.95709e+7
+  Hmax: 10000 
+  lr: 1.1441928527418362e-3
+  u: 5.e-3
+  c: 20
+  r: 4
+  B: 10
