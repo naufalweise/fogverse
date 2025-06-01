@@ -82,7 +82,7 @@ class Partitioner:
         assert b > 0
         r = self.r
         c = max(c, self.c)
-        # self.T = max(self.T, t), apakah bila target  throughput dinaikkan bisa menimbulkan effect infinite loop scale?
+        self.T = max(self.T, t), #apakah bila target  throughput dinaikkan bisa menimbulkan effect infinite loop scale?
 
         min_brokers = b
         if always_scale:

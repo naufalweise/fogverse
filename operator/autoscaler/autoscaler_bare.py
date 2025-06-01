@@ -5,8 +5,12 @@ import argparse
 from algorithms import Partitioner
 from kubernetes import client, config
 import get_cpu
+import datetime
+import time
 
-partitioner = Partitioner()  # TODO: masukan config awal sebagai parameter
+T = 1.6e+7
+partitioner = Partitioner(T=T)  # TODO: masukan config awal sebagai parameter
+COOL_DOWN = 60 # jarak antar scaling 1 dgn scaling berikutnya, in seconds
 
 # Static variables for KAFKA_NAMESPACE and Kafka resource name
 KAFKA_NAMESPACE = "kafka"  # Replace with your KAFKA_NAMESPACE
@@ -18,7 +22,7 @@ def initialize_kubernetes():
     config.load_kube_config()
     return client.CustomObjectsApi()
 
-TOPIC_NAME = "my-topic-1" 
+TOPIC_NAME = "exp" 
 def patch_partitions(api_instance, partitions):
     """Patch the number of partitions for the Kafka cluster."""
     kafka_patch = {
@@ -112,7 +116,7 @@ def check_threshold():
     """Check the scaling parameters and determine if scaling is needed and which metrics caused it."""
     cpu_usage = get_kafka_brokers_cpu_usage()
     #cpu_usage = 100
-    if cpu_usage > 80:
+    if cpu_usage > 70:
         return (True,  "cpu")
     idle_thread = get_request_handler_idle_ratio()
 
@@ -147,6 +151,24 @@ def get_consumers_count():
         return 0  # Default to 0 if the query fails
 
 
+def get_throughput(topic_name):
+    """Fetch the Kafka consumers count from Prometheus."""
+    query = ('sum(irate(kafka_server_brokertopicmetrics_bytesin_total{topic="' + topic_name + '"}[5m]))')
+    try:
+        response = requests.get(f"{PROMETHEUS_URL}/api/v1/query", params={"query": query})
+        response.raise_for_status()
+        data = response.json()
+        # Extract the consumers count from the Prometheus response
+        print(data)
+        if not data["data"]["result"]:
+            return T # theres no consumer group with specified name
+
+        throughput = float(data["data"]["result"][0]["value"][1])
+        return throughput
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching consumers count from Prometheus: {e}")
+        return T # Default if the query fails
+        
 def get_brokers_count():
     kafka_cr = custom_api.get_namespaced_custom_object(
         group="kafka.strimzi.io",
@@ -175,16 +197,23 @@ def handle_scale(custom_api):
     if P == -1 or b == -1:
         print("No feasible solution found for scaling.")
         return
+
+    if b == brokers_count:
+        print("No need to scale")
+        return
+
     # Patch partitions and scale brokers
     print(f"Scaling to {P} partitions and {b} brokers")
     patch_partitions(custom_api, P)
     scale_brokers(custom_api, b)
+    time.sleep(COOL_DOWN)
+
 
 # Kubernetes API client
 custom_api = initialize_kubernetes()
 import time
-#interval = 1  # for testing, check every second
-interval = 60  # Check every 60 seconds
+interval = 1  # for testing, check every second
+# interval = 60  # Check every 60 seconds
 while True:
     # Sleep for the specified interval
     time.sleep(interval)
