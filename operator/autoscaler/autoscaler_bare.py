@@ -16,13 +16,16 @@ COOL_DOWN = 60 # jarak antar scaling 1 dgn scaling berikutnya, in seconds
 KAFKA_NAMESPACE = "kafka"  # Replace with your KAFKA_NAMESPACE
 KAFKA_CLUSTER_NAME = "my-cluster"  # Replace with your Kafka cluster name
 PROMETHEUS_URL = "http://localhost:9090"  # Replace with your Prometheus server URL
+TOPIC_NAME = "exp" 
+MAX_B = 7
+
+interval = 1  # for testing, check for scaling every second
 
 def initialize_kubernetes():
     """Initialize Kubernetes configuration and return the API client."""
     config.load_kube_config()
     return client.CustomObjectsApi()
 
-TOPIC_NAME = "exp" 
 def patch_partitions(api_instance, partitions):
     """Patch the number of partitions for the Kafka cluster."""
     kafka_patch = {
@@ -194,9 +197,15 @@ def handle_scale(custom_api):
 
     (P, b) = partitioner.bromin_scale(c=consumers_count, b=brokers_count, t=throughput, always_scale=trigger in ALWAYS_SCALE_METRICS)
 
+    print("Got b:",b)
+    print("Got P", p)
     if P == -1 or b == -1:
         print("No feasible solution found for scaling.")
         return
+
+    if b > MAX_B:
+        print("b greater than max. scaling to max")
+        b = MAX_B
 
     if b == brokers_count:
         print("No need to scale")
@@ -211,8 +220,6 @@ def handle_scale(custom_api):
 
 # Kubernetes API client
 custom_api = initialize_kubernetes()
-import time
-interval = 1  # for testing, check every second
 # interval = 60  # Check every 60 seconds
 while True:
     # Sleep for the specified interval

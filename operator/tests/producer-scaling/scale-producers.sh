@@ -22,11 +22,10 @@ while [ "$instance_count" -lt "$INSTANCE_LIMIT" ]; do
 
   # Run the Kafka producer performance test in the background and redirect output to a log file
   nohup "$PRODUCER_SCRIPT" \
-    --broker-list "$KAFKA_BROKERS" \
     --topic "$TOPIC_NAME" \
     --message-size "$MESSAGE_SIZE" \
     --num-messages "$NUM_MESSAGES" \
-    --producer-props acks=1 \
+    --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 \
     > "$log_file" 2>&1 &
 
   echo "Instance $instance_count spawned with PID $!."

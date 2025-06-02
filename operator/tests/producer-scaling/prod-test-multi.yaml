@@ -24,7 +24,7 @@ spec:
             KAFKA_BROKERS="my-cluster-kafka-bootstrap:9092"  # Replace with your Kafka broker list (e.g., localhost:9092)
             TOPIC_NAME="my-topic-1"      # Replace with the topic you want to test
             MESSAGE_SIZE=1024                 # Message size in bytes
-            NUM_MESSAGES=1000                # Number of messages to send per test
+            NUM_MESSAGES=10000                # Number of messages to send per test
             PRODUCER_SCRIPT="kafka-producer-perf-test" # Assuming this script is in your PATH or current directory
             INSTANCE_LIMIT=3
             SPAWN_INTERVAL=60                 # Interval in seconds

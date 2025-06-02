@@ -1,4 +1,4 @@
-topics: [ 'my-topic-1']
+topics: [ 'exp']
 partitioning_params:
   algorithm: 'BroMin'
   T: 1.6e+7
@@ -10,5 +10,5 @@ partitioning_params:
   lr: 1.1441928527418362e-3
   u: 5.e-3
   c: 20
-  r: 4
+  r: 3
   B: 10

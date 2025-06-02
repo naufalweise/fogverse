@@ -7,3 +7,6 @@ metadata:
 spec:
   partitions: {{ partitions }}
   replicas: {{ replication_factor }}
+  config:
+    retention.ms: 60000  # Keep messages for 60 seconds
+    cleanup.policy: delete

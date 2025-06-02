@@ -26,6 +26,9 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   replicas: {{ replicas }}
+  jvmOptions:
+    -Xms: 4g
+    -Xmx: 4g
   roles:
     - broker
   storage:
@@ -41,7 +44,7 @@ spec:
         memory: 1Gi
         cpu: "200m"
       limits:
-        memory: 2Gi
+        memory: 6Gi
         cpu: "1"
 ---
 

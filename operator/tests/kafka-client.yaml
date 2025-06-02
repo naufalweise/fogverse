@@ -12,11 +12,14 @@ spec:
       env:
         - name: KAFKA_BROKERS
           value: "your-kafka-brokers-service:9092" # Replace with your Kafka service address
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
     # Add resource requests/limits if needed for your client operations
       resources:
         requests:
           cpu: "100m"
           memory: "256Mi"
         limits:
-          cpu: "4"
+          cpu: "8"
           memory: "4Gi"

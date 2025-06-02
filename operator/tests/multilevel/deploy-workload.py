@@ -16,10 +16,11 @@ NUM_CONSUMERS = int(os.environ.get("NUM_CONSUMERS", 1))
 NUM_PRODUCERS = int(os.environ.get("NUM_PRODUCERS", 1))
 THROUGHPUT_PER_PRODUCER = int(os.environ.get("THROUGHPUT_PER_PRODUCER", -1))
 MESSAGE_SIZE_BYTES = int(os.environ.get("MESSAGE_SIZE_BYTES", 1024))
-DURATION = int(os.environ.get("DURATION"), 0)
+DURATION = int(os.environ.get("DURATION", 0)) # in minutes
+PROD_SCALE_DELAY = int(os.environ.get("PROD_SCALE_DELAY", 0))
 
 if DURATION:
-    NUM_RECORDS = 1000000000 # set to invinity
+    NUM_RECORDS = 9223372036854775807 # set to max
 
 producer_pids = []
 consumer_pids = []
@@ -45,15 +46,19 @@ def start_producers():
         stdout_file = os.path.join(OUTPUT_FOLDER, f"producer_{i}_stdout.log")
         stderr_file = os.path.join(OUTPUT_FOLDER, f"producer_{i}_stderr.log")
         command = (
-            "kubectl exec kafka-client -n kafka -- kafka-producer-perf-test "
+            "date && kubectl exec kafka-client -n kafka -- kafka-producer-perf-test "
             f"--producer-props bootstrap.servers={KAFKA_BROKERS} "
             f"--topic {TOPIC_NAME} "
             f"--num-records {NUM_RECORDS} "
             f"--record-size {MESSAGE_SIZE_BYTES} "
-            f"--throughput {THROUGHPUT_PER_PRODUCER}"
+            f"--throughput {THROUGHPUT_PER_PRODUCER} "
+            "--print-metrics && date"
         )
         pid, process = run_command_background(command, stdout_file, stderr_file)
         producer_pids.append(pid)
+        if PROD_SCALE_DELAY:
+            print("Delaying...")
+        time.sleep(PROD_SCALE_DELAY)
     print(f"All producers started with PIDs: {producer_pids}")
 
 def start_consumers():
@@ -74,8 +79,15 @@ def start_consumers():
         consumer_pids.append(pid)
     print(f"All consumers started with PIDs: {consumer_pids}")
 
-
 def wait_for_test():
+    if DURATION:
+        time.sleep(DURATION * 60)
+        stop_processes()
+    else:
+        wait_for_prod()
+    
+
+def wait_for_prod():
     print("Waiting for producers to finish...")
     for pid in producer_pids:
         try:
@@ -98,6 +110,7 @@ def stop_processes():
     for pid in producer_pids:
         try:
             os.kill(pid, 9)  # SIGKILL to forcefully terminate
+            #os.kill(pid, 2)
             print(f"Sent SIGKILL to producer PID {pid}.")
         except ProcessLookupError:
             print(f"Producer PID {pid} not found.")
@@ -105,7 +118,8 @@ def stop_processes():
     print("Stopping consumers...")
     for pid in consumer_pids:
         try:
-            os.kill(pid, 9)  # SIGKILL to forcefully terminate
+            #os.kill(pid, 9)  # SIGKILL to forcefully terminate
+            os.kill(pid, 2)
             print(f"Sent SIGKILL to consumer PID {pid}.")
         except ProcessLookupError:
             print(f"Consumer PID {pid} not found.")
@@ -120,13 +134,18 @@ def collect_results():
         outfile.write(f"Num Consumers: {NUM_CONSUMERS}\n")
         outfile.write(f"Message Size: {MESSAGE_SIZE_BYTES}\n")
         outfile.write(f"Prod Throughput: {THROUGHPUT_PER_PRODUCER}\n")
-        outfile.write(f"Num records: {NUM_RECORDS}\n")
+        outfile.write(f"Prod Scale Delay: {PROD_SCALE_DELAY}\n")
+        if DURATION:
+            outfile.write(f"Duration: {DURATION}")
+        else:
+            outfile.write(f"Num records: {NUM_RECORDS}\n")
+        
         outfile.write(f"Output logs stored in: {OUTPUT_FOLDER}\n")
     print(f"Performance test summary saved to: {summary_file}")
 
 if __name__ == "__main__":
-    start_producers()
     start_consumers()
+    start_producers()
     wait_for_test()
     collect_results()
     print("Script finished.")
