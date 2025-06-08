@@ -37,7 +37,9 @@ class KafkaKedaConsumer:
                  consumer_config: KafkaConsumerConfig,
                  scaler_config: KedaScalerConfig, 
                  namespace: str = "default",
-                 env_vars: Optional[Dict[str, str]] = None
+                 env_vars: Optional[Dict[str, str]] = None,
+                 command: Optional[List[str]] = None,
+                 args: Optional[List[str]] = None,
         ):
         """
         Args:
@@ -55,10 +57,13 @@ class KafkaKedaConsumer:
         self.scaler_config = scaler_config
         self.namespace = namespace
         self.user_env_vars = env_vars or {}
+        self.command = command
+        self.args = args
 
         config.load_kube_config()
         self.api = client.AppsV1Api()
         self.keda_api = client.CustomObjectsApi()
+        
 
     def deploy(self):
         """Deploy Kafka consumer and KEDA scaler."""
@@ -100,6 +105,12 @@ class KafkaKedaConsumer:
                                 name=self.name,
                                 image=self.image,
                                 env=env_list,
+                                command=self.command,
+                                args=self.args,
+                                resources=client.V1ResourceRequirements(
+                                    limits={'memory': '500Mi', 'cpu': '500m'},
+                                    requests={'memory': '500Mi', 'cpu': '500m'},
+                                )
                             )
                         ]
                     ),
