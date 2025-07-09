@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fogverse-producer
+spec:
+  template:
+    spec:
+      containers:
+        - name: fogverse-producer
+          image: fog-prod:1.0.0
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: my-cluster-kafka-bootstrap:9092
+      restartPolicy: Never
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fogverse-consumer
+spec:
+  containers:
+    - name: fogverse-consumer
+      image: fog-cons:1.0.0
+      env:
+      - name: BOOTSTRAP_SERVERS
+        value: my-cluster-kafka-bootstrap:9092
+  restartPolicy: Always  # Ensures it keeps running

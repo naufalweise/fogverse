@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-producer-scaler
+  namespace: kafka-perf-test # Ensure this matches your Kafka cluster's namespace
+  labels:
+    app: kafka-producer-scaler
+spec:
+  replicas: 1 # Start with 1 replica, the script will scale this up
+  selector:
+    matchLabels:
+      app: kafka-producer-scaler
+  template:
+    metadata:
+      labels:
+        app: kafka-producer-scaler
+    spec:
+      containers:
+      - name: kafka-producer-client
+        image: confluentinc/cp-kafka:7.5.0 # Use a Kafka client image. Adjust version as needed.
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "Starting Kafka producer client instance..."
+            # Wait for Kafka brokers to be ready (optional, but good practice)
+            sleep 10 # Short sleep, assuming cluster is already up
+
+            # Kafka Producer Performance Test Command
+            # This producer will run continuously, sending messages.
+            # Adjust parameters as needed for your test.
+            # It will keep running until the pod is terminated.
+            kafka-producer-perf-test \
+              --topic my-topic-1 \
+              --num-records 10 \
+              --throughput -1 \
+              --record-size 100 \
+              --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 acks=all \
+              --print-metrics
+
+            echo "Kafka producer client instance terminated."
+        env:
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: my-kafka-cluster-kafka-bootstrap:9092
+          - name: KAFKA_TOPIC
+            value: performance-test-topic
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.1"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        volumeMounts:
+          # If using TLS or SCRAM, you would mount secrets containing certificates or password files here.
+          # - name: kafka-certs
+          #   mountPath: /opt/kafka/certs
+          #   readOnly: true
+      volumes:
+        # If using TLS or SCRAM, define the secret volume here.
+        # - name: kafka-certs
+        #   secret:
+        #     secretName: my-kafka-cluster-clients-ca-cert
+        #     items:
+        #       - key: ca.p12
+        #         path: truststore.p12
+        #       - key: ca.password
+        #         path: truststore.password

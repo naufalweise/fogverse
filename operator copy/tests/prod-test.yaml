@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-perf-test-client
+  namespace: kafka
+  labels:
+    app: kafka-perf-test-client
+spec:
+  template:
+    metadata:
+      labels:
+        app: kafka-perf-test-client
+    spec:
+      restartPolicy: Never # Important for Jobs: ensures the pod doesn't restart on completion
+      containers:
+      - name: kafka-perf-client
+        image: confluentinc/cp-kafka:7.5.0
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "Starting Kafka performance test client..."
+
+            # --- KAFKA PRODUCER PERFORMANCE TEST ---
+        
+            kafka-producer-perf-test \
+              --topic my-topic-1 \
+              --num-records 10 \
+              --throughput -1 \
+              --record-size 1024 \
+              --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 acks=all \
+              --print-metrics
+
+            echo "Performance test completed."
+        env:
+          # Example environment variables if you need to pass dynamic values
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: my-kafka-cluster-kafka-bootstrap:9092 # Internal service name and port
+          - name: KAFKA_TOPIC
+            value: my-topic-1
+          # If using TLS/SCRAM, you'd need to mount secrets for certificates/passwords
+          # and reference them here or in a separate client.properties file.
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"

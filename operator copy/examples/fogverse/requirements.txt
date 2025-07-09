@@ -1,0 +1,2 @@
+python-dotenv
+git+https://github.com/naufalweise/fogverse.git@keda_consumer#egg=fogverse
